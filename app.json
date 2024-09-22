@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "LeadySystem",
+    "slug": "LeadySystem",
+    "version": "1.0.0",
+    "entryPoint": "./App.jsx",
+    "orientation": "portrait",
+    "icon": "./assets/applogo.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/Splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "transparent"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.arif450.LeadySystem"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    }
+  }
+}
