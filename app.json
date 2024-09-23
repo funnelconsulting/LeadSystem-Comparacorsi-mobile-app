@@ -1,9 +1,8 @@
 {
   "expo": {
-    "name": "LeadySystem",
-    "slug": "LeadySystem",
-    "version": "1.0.0",
-    "entryPoint": "./App.jsx",
+    "name": "LeadSystem",
+    "slug": "LeadSystem",
+    "version": "1.0.7",
     "orientation": "portrait",
     "icon": "./assets/applogo.png",
     "scheme": "myapp",
@@ -11,22 +10,37 @@
     "splash": {
       "image": "./assets/Splash.png",
       "resizeMode": "cover",
-      "backgroundColor": "transparent"
+      "backgroundColor": "#00000000"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.leadsystem",
+      "buildNumber": "7"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.arif450.LeadySystem"
+      "package": "com.Otacon.LeadSystem",
+      "versionCode": 2
     },
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c893217e-1758-46d2-b886-0bb87fa90020"
+      }
+    },
+    "runtimeVersion": "1.0.3",
+    "updates": {
+      "url": "https://u.expo.dev/c893217e-1758-46d2-b886-0bb87fa90020"
     }
   }
 }

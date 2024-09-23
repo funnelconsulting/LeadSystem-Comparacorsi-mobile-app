@@ -9,6 +9,8 @@ import Splash from './Screens/Splash';
 import FilterDataTabs from './Screens/Dashboard/FilterTabs/FilterDataTabs';
 import Chat from './Screens/Dashboard/FilterTabs/Chat';
 import DateAnalyze from './Screens/Dashboard/FilterTabs/DateAnalyze';
+import VectorImage from './/assets//Vector.png';
+import BackImage from './/assets//back.png';
 
 const Stack = createStackNavigator();
 
@@ -28,7 +30,7 @@ export default function App({navigation}) {
             headerRight: () => (
               <TouchableOpacity onPress={() => alert('Right button pressed!')}>
                 <Image 
-                  source={require('./assets/Vector.png')} 
+                  source={VectorImage} 
                   style={{ width: 24, height: 24, marginRight: 15,objectFit:'contain' }} 
                 />
               </TouchableOpacity>
@@ -44,7 +46,7 @@ export default function App({navigation}) {
             headerRight: () => (
               <TouchableOpacity onPress={() => alert('Right button pressed!')}>
                 <Image 
-                  source={require('./assets/Vector.png')} 
+                  source={VectorImage} 
                   style={{ width: 24, height: 24, marginRight: 15, objectFit: 'contain' }} 
                 />
               </TouchableOpacity>
@@ -52,7 +54,7 @@ export default function App({navigation}) {
             headerLeft: () => (
               <TouchableOpacity onPress={() => navigation.goBack()}>
                 <Image 
-                  source={require('./assets/back.png')} 
+                  source={BackImage}
                   style={{ width: 24, height: 24, marginLeft: 15 }} 
                 />
               </TouchableOpacity>

@@ -1,3 +1,10 @@
 {
-  "urlRandomness": "BdP8A_I"
+  "urlRandomness": "BdP8A_I",
+  "dev": true,
+  "minify": false,
+  "https": false,
+  "scheme": null,
+  "hostType": "lan",
+  "lanType": "ip",
+  "devClient": false
 }
