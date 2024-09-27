@@ -67,7 +67,6 @@ const Dashboard = () => {
                 />
               </TouchableOpacity>
             ),
-            
           }}
         />
         <Tab.Screen

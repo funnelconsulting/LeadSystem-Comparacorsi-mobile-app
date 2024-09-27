@@ -1,30 +1,16 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TextInput, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, Image, TextInput, Alert, Platform, ActivityIndicator } from 'react-native';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 
-const messages = [
-  {
-    name: 'Andrea Caruso',
-    message: 'Mi dispiace per inconveniente, pot.',
-    time: '12:34',
-    date: '12/03/2004',
-  },
-  {
-    name: 'Andrea Caruso',
-    message: 'Mi dispiace per inconveniente, pot.',
-    time: '10:34',
-    date: '11/03/2004',
-  },
-  {
-    name: 'Andrea Caruso',
-    message: 'Mi dispiace per inconveniente, pot.',
-    time: '12:34',
-    date: '09/02/2023',
-  },
-];
-
-const App = ({navigation}) => {
+const Whatsapp = ({navigation}) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [leadsChat, setLeadsChat] = useState([]);
+  const [filteredChat, setFilteredChat] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
   const showLogoutAlert = () => {
     Alert.alert(
       "Conferma Logout",
@@ -35,14 +21,67 @@ const App = ({navigation}) => {
           onPress: () => console.log("Annullato"),
           style: "cancel"
         },
-        { text: "Sì", onPress: () => console.log("Logout eseguito") }
+        {
+          text: "Sì", 
+          onPress: async () => {
+            console.log("Logout eseguito");
+            await AsyncStorage.clear(); // Pulisce lo storage
+            navigation.replace('Login'); // Reindirizza alla schermata di login
+          } 
+        }
       ]
     );
   };
 
-  const filteredMessages = messages.filter((message) =>
-    message.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  useEffect(() => {
+    if (leadsChat.length > 0) {
+      const filtered = leadsChat.filter(chat => {
+        const fullName = `${chat.first_name} ${chat.last_name}`.toLowerCase();
+        const phoneNumber = chat.numeroTelefono || '';
+        const search = searchTerm.toLowerCase();
+        return fullName.includes(search) || phoneNumber.includes(search);
+      });
+      setFilteredChat(filtered);
+    }
+  }, [searchTerm, leadsChat]);
+
+  const fetchChats = async () => {
+    const userData = await AsyncStorage.getItem('user');
+    const user = userData ? JSON.parse(userData) : null;
+    const userFixId = user.role && user.role === "orientatore" ? user.utente : user._id;
+    try {
+      const response = await fetch(`https://chatbolt-comparacorsi-production.up.railway.app/api/get-all-chats?ecpId=${userFixId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      const { chats } = data;
+      console.log(data);
+      setLeadsChat(chats);
+      setFilteredChat(chats);
+      setIsLoading(false);
+    } catch (error) {
+      console.error(error);
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setIsLoading(true);
+    fetchChats();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#000" />
+        <Text style={styles.loaderText}>Caricamento chat...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -55,7 +94,7 @@ const App = ({navigation}) => {
             <Image source={require('../assets/Vector.png')} style={styles.topIcon} />
           </TouchableOpacity>
       </View>
-      <View style={styles.bodyContainer}>
+      <View style={styles.bodyContainer}> 
       <View style={styles.searchContainer}>
         <Image source={require('../assets/search.png')} style={styles.searchIcon} />
         <TextInput
@@ -65,27 +104,52 @@ const App = ({navigation}) => {
           onChangeText={setSearchTerm}
           style={styles.searchInput}
         />
-        <Image source={require('../assets/filter.png')} style={styles.filterIcon} />
+        {/*<Image source={require('../assets/filter.png')} style={styles.filterIcon} />*/}
       </View>
-      <FlatList
-        data={filteredMessages}
-        keyExtractor={(item, index) => item.name + item.time + index.toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.messageContainer} onPress={() => navigation.navigate('Chat')}>
-            <View style={styles.profileIcon}>
-              <Image source={require('../assets/avatar2.png')} style={styles.icon} />
-            </View>
-            <View style={styles.messageDetails}>
-              <View style={styles.nameTimeRow}>
-                
-                <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.time}>{item.time}</Text>
-              </View>
-              <Text style={styles.message}>{item.message}</Text>
-            </View>
-          </TouchableOpacity>
+      {leadsChat.length > 0 || filteredChat.length > 0 ? (
+          <FlatList
+            data={filteredChat}
+            keyExtractor={(item) => item._id.toString()}
+            renderItem={({ item }) => {
+              if (!item || !item.messages || item.messages.length === 0) {
+                return null; // o un componente di fallback
+              }
+              const lastMessage = item.messages[item.messages.length - 1];
+              const messageDate = new Date(lastMessage.timestamp);
+              const now = new Date();
+
+              let timeString;
+              if (messageDate.toDateString() === now.toDateString()) {
+                timeString = messageDate.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+              } else {
+                timeString = messageDate.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+              }
+
+              const truncatedMessage = lastMessage.content.length > 30 
+                ? lastMessage.content.substring(0, 30) + '...' 
+                : lastMessage.content;
+            
+              return (
+                <TouchableOpacity style={styles.messageContainer} onPress={() => navigation.navigate('Chat', { chatId: item._id, chat: item })}>
+                  <View style={styles.profileIcon}>
+                    <Image source={require('../assets/avatar2.png')} style={styles.icon} />
+                  </View>
+                  <View style={styles.messageDetails}>
+                    <View style={styles.nameTimeRow}>
+                      <Text style={styles.name}>{item.first_name + ' ' + item.last_name}</Text>
+                      <Text style={styles.time}>{timeString}</Text>
+                    </View>
+                    <Text style={styles.message}>{truncatedMessage}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            }}
+          />
+        ) : (
+          <View style={styles.noChatsContainer}>
+            <Text style={styles.noChatsText}>Nessuna chat disponibile</Text>
+          </View>
         )}
-      />
       </View>
     </View>
   );
@@ -97,8 +161,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingTop: 0,
   },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  loaderText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#3471CC',
+  },
+  noChatsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noChatsText: {
+    fontSize: 16,
+    color: '#6F6F6F',
+  },
   topWhats: {
-    paddingTop: 38,
+    paddingTop: Platform.OS === 'ios' ? 38 : 10,
     height: 95,
     paddingBottom: 15,
     backgroundColor: '#F4F8FB',
@@ -207,4 +291,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+export default Whatsapp;

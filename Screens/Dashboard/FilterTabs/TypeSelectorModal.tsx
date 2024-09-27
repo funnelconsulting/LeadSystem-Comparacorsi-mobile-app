@@ -1,18 +1,28 @@
-import React, { useState } from 'react';
+import network from '@/constants/Network';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, Modal, Image } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import RNPickerSelect from 'react-native-picker-select';
+import Toast from 'react-native-toast-message';
+import { ActivityIndicator } from 'react-native'; // Importa ActivityIndicator
 
-const TypeSelectorModal = ({ isVisible, onClose }) => {
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [importValue, setImportValue] = useState('');
+const TypeSelectorModal = ({ isVisible, onClose, lead, item, esito, onSave, modificaLeadLocale, setColumnData }) => {
+  const [selectedOption, setSelectedOption] = useState("");
+  const [importValue, setImportValue] = useState('0');
   const [levaValue, setLevaValue] = useState('');
   const [nonValidoValue, setNonValidoValue] = useState('');
   const [leadPersaValue, setLeadPersaValue] = useState('');
+  const [loading, setLoading] = useState(false); // Stato per il caricamento
 
   const handleOptionPress = (option: string) => {
     setSelectedOption(option);
   };
+
+  useEffect(() => {
+    setSelectedOption(esito)
+  }, [esito])
 
   const handleImportChange = (text: string) => {
     setImportValue(text);
@@ -24,6 +34,73 @@ const TypeSelectorModal = ({ isVisible, onClose }) => {
 
   const handleNonValidoChange = (text: string) => {
     setNonValidoValue(text);
+  };
+
+  const handleSubmit = async () => {
+    setLoading(true); // Imposta lo stato di caricamento a true
+    const userData = await AsyncStorage.getItem('user');
+    const user = userData ? JSON.parse(userData) : null;
+    const userFixId = user.role && user.role === "orientatore" ? user.utente : user._id;
+    if (selectedOption === "Non valido" || selectedOption === "Venduto" || selectedOption === "Non interessato") {
+      if (!nonValidoValue || nonValidoValue === "") {
+        return;
+      } else {
+        try {
+          const modifyLead = {
+            esito: selectedOption,
+            motivo: selectedOption === "Non valido" ? nonValidoValue : selectedOption === "Venduto" ? levaValue : leadPersaValue,
+            fatturato: importValue,
+          };
+          const response = await axios.put(network.serverip+`/lead/${userFixId}/update/${item._id}`, modifyLead);
+          onSave(selectedOption);
+          await modificaLeadLocale(item._id, modifyLead);
+          await onClose();
+          Toast.show({
+            type: 'success',
+            text1: 'Successo',
+            text2: 'Lead spostata con successo!',
+            position: 'top',
+            visibilityTime: 4000,
+            autoHide: true,
+            topOffset: 40,
+            style: styles.toast, // Applica lo stile personalizzato
+            text1Style: styles.toastText1, // Stile per il testo principale
+            text2Style: styles.toastText2, // Stile per il testo secondario
+          });
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setLoading(false); // Imposta lo stato di caricamento a false
+        }
+      }
+    } else {
+      try {
+        const modifyLead = {
+          esito: selectedOption,
+          motivo: "",
+        };
+        const response = await axios.put(network.serverip+`/lead/${userFixId}/update/${item._id}`, modifyLead);
+        Toast.show({
+          type: 'success',
+          text1: 'Successo',
+          text2: 'Lead spostata con successo!',
+          position: 'top',
+          visibilityTime: 4000,
+          autoHide: true,
+          topOffset: 40,
+          style: styles.toast, // Applica lo stile personalizzato
+          text1Style: styles.toastText1, // Stile per il testo principale
+          text2Style: styles.toastText2, // Stile per il testo secondario
+        });
+        onSave(selectedOption);
+        await modificaLeadLocale(item._id, modifyLead);
+        onClose();
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false); // Imposta lo stato di caricamento a false
+      }
+    }
   };
 
   return (
@@ -41,13 +118,13 @@ const TypeSelectorModal = ({ isVisible, onClose }) => {
           </TouchableOpacity>
 
           <ScrollView style={styles.optionsContainer}>
-            {['Da contattare', 'In lavorazione', 'Irraggiungibile', 'Non valido', 'Lead persa', 'Opportunità', 'In valutazione', 'Venduto', 'Iscrizione posticipata'].map((option) => (
+            {['Da contattare', 'In lavorazione', "Non risponde", 'Irraggiungibile', 'Non valido', 'Non interessato', 'Opportunità', 'In valutazione', 'Venduto', 'Iscrizione posticipata'].map((option) => (
               <View key={option} style={styles.bigContainer}>
                 <TouchableOpacity onPress={() => handleOptionPress(option)} style={styles.optionContainer}>
                   <View style={styles.circleContainer}>
-                    <View style={[styles.circle, selectedOption === option && styles.selectedCircle]} />
+                    <View style={[styles.circle, (selectedOption !== null && selectedOption?.trim() === option) && styles.selectedCircle]} />
                   </View>
-                  <Text style={styles.optionText}>{option}</Text>
+                  <Text style={styles.optionText}>{option == "Non interessato" ? "Lead persa" : option}</Text>
                 </TouchableOpacity>
                 {selectedOption === option && (
                   <>
@@ -131,8 +208,12 @@ const TypeSelectorModal = ({ isVisible, onClose }) => {
             ))}
           </ScrollView>
 
-          <TouchableOpacity style={styles.buttonContainer} onPress={onClose}>
-            <Text style={styles.buttonText}>Salva Modifiche</Text>
+          <TouchableOpacity style={styles.buttonContainer} onPress={handleSubmit} disabled={loading}>
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Salva Modifiche</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -243,6 +324,20 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontSize: 16,
+  },
+  toast: {
+    backgroundColor: '#333', // Colore di sfondo del toast
+    borderRadius: 10, // Bordo arrotondato
+    padding: 10, // Padding interno
+  },
+  toastText1: {
+    fontSize: 16, // Dimensione del testo principale
+    fontWeight: 'bold', // Grassetto
+    color: '#000', // Colore del testo principale
+  },
+  toastText2: {
+    fontSize: 14, // Dimensione del testo secondario
+    color: '#000', // Colore del testo secondario
   },
 });
 

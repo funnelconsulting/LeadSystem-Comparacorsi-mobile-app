@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useRoute } from '@react-navigation/native';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, TextInput, Switch,SafeAreaView, ImageBackground } from 'react-native';
 
 const messages = [
@@ -14,7 +15,10 @@ const messages = [
 const Chat = () => {
   const [showFullChat, setShowFullChat] = useState(false);
   const [newMessage, setNewMessage] = useState('');
-  const [toggle,settoggle]=useState(false)
+  const [messages, setMessages] = useState([]);
+  const route = useRoute();
+  const { item, lead, chat } = route.params;
+  const scrollViewRef = React.useRef();
 
   const toggleChatVisibility = () => {
     setShowFullChat(!showFullChat);
@@ -32,19 +36,53 @@ const Chat = () => {
     }
   };
 
+  useEffect(() => {
+    if (chat && chat.messages) {
+      const formattedMessages = chat.messages.map((msg, index) => {
+        const messageDate = new Date(msg.timestamp);
+        const today = new Date();
+        let timeString;
+  
+        if (
+          messageDate.getDate() === today.getDate() &&
+          messageDate.getMonth() === today.getMonth() &&
+          messageDate.getFullYear() === today.getFullYear()
+        ) {
+          // Se il messaggio è di oggi, mostra solo l'ora
+          timeString = messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else {
+          // Altrimenti, mostra la data completa
+          timeString = messageDate.toLocaleString([], {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        }
+  
+        return {
+          id: index.toString(),
+          type: msg.sender === 'user' ? 'user' : 'bot',
+          message: msg.content,
+          time: timeString,
+        };
+      });
+      setMessages(formattedMessages);
+    }
+
+      setTimeout(() => {
+        scrollViewRef?.current?.scrollToEnd({ animated: false });
+      }, 100);
+  }, [chat]);
+
   const visibleMessages = showFullChat ? messages : messages.slice(-4);
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Image source={require('..//..//../assets/Vector.png')} style={styles.avatar} />
-        <Text style={styles.headerText}>Alessandro Grandoni</Text>
-        <Switch
-                value={toggle}
-                onValueChange={settoggle}
-                thumbColor={toggle ? '#34C759' : '#f4f3f4'}
-                trackColor={{ false: '#767577', true: '#34C759' }}
-              />
+        <Text style={styles.headerText}>{chat?.first_name + ' ' + chat?.last_name}</Text>
       </View>
       <ImageBackground
         source={require('../../../assets/backchat.png')} 
@@ -52,7 +90,7 @@ const Chat = () => {
       >
       <ScrollView contentContainerStyle={styles.contentContainer}>
         {visibleMessages.map((msg) => (
-          <View key={msg.id} style={[styles.messageContainer, msg.type === 'sent' ? styles.sentMessage : styles.receivedMessage]}>
+          <View key={msg.id} style={[styles.messageContainer, msg.type === 'bot' ? styles.sentMessage : styles.receivedMessage]}>
             <Text style={styles.messageText}>{msg.message}</Text>
             <Text style={styles.timeText}>{msg.time}</Text>
           </View>
@@ -69,7 +107,7 @@ const Chat = () => {
       </ScrollView>
       </ImageBackground>
       <View style={styles.inputContainer}>
-        <TextInput
+        {/*<TextInput
           style={styles.input}
           placeholder="Scrivi un messaggio..."
           value={newMessage}
@@ -77,7 +115,7 @@ const Chat = () => {
         />
         <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
           <Image source={require('..//..//../assets/send-message.png')} style={styles.sendIcon} />
-        </TouchableOpacity>
+        </TouchableOpacity>*/}
       </View>
     </SafeAreaView>
   );

@@ -1,11 +1,41 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Switch, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Switch, Image, Alert, ActivityIndicator } from 'react-native';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import network from '@/constants/Network';
 
 const Login = ({navigation}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false); // Stato di caricamento
+
+  const handleLogin = async () => {
+    setLoading(true); // Inizia il caricamento
+    const lowerCaseEmail = email.toLowerCase(); // Converti l'email in minuscolo
+    try {
+      const response = await axios.post(network.serverip+'/login', { email: lowerCaseEmail, password });
+      console.log(response.data)
+
+      if (response.data && response.data.token && response.data.user) {
+        const { token, user } = response.data;
+  
+        await AsyncStorage.setItem('authToken', token);
+        await AsyncStorage.setItem('user', JSON.stringify(user));
+  
+        navigation.navigate('Dashboard');
+      } else {
+        throw new Error('Invalid response structure');
+      }
+    } catch (error) {
+      console.log(error)
+      Alert.alert('Errore di login', 'Email o password non corretti');
+    } finally {
+      setLoading(false); // Termina il caricamento
+    }
+  };
+
 
   return (
     <View style={styles.container}>
@@ -40,8 +70,12 @@ const Login = ({navigation}) => {
         />
         <Text style={styles.rememberMeText}>Memorizza i dati di accesso</Text>
       </View>
-      <TouchableOpacity style={styles.button} onPress={()=>navigation.navigate('Dashboard')}>
-        <Text style={styles.buttonText}>Accedi</Text>
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        {loading ? (
+          <ActivityIndicator size="small" color="#FFF" />
+        ) : (
+          <Text style={styles.buttonText}>Accedi</Text>
+        )}
       </TouchableOpacity>
       <TouchableOpacity>
         <Text style={styles.forgotPasswordText}>Hai dimenticato la password?</Text>

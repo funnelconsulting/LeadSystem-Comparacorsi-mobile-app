@@ -1,15 +1,24 @@
 // SplashScreen.js
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Image, ImageBackground } from 'react-native';
 
 const Splash = ({ navigation }) => {
 
-   useEffect(() => {
+  useEffect(() => {
+    const checkAuth = async () => {
+      const authToken = await AsyncStorage.getItem('authToken');
+      if (authToken) {
+        navigation.navigate('Dashboard');
+      } else {
+        navigation.navigate('Login');
+      }
+    };
+
     setTimeout(() => {
-      navigation.navigate('Login'); 
-    }, 3000);
+      checkAuth();
+    }, 2000);
   }, [navigation]);
-  
 
   return (
      <ImageBackground

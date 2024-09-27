@@ -1,150 +1,187 @@
-import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, TextInput, Image, Alert } from 'react-native';
+import network from '@/constants/Network';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, TextInput, Image, Alert, Platform, ActivityIndicator, ScrollView } from 'react-native';
+import moment from 'moment';
+import axios from 'axios';
 
 const Calendar = ({navigation}) => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [currentMonth, setCurrentMonth] = useState(selectedDate.getMonth());
-  const [currentYear, setCurrentYear] = useState(selectedDate.getFullYear());
+  const [selectedDate, setSelectedDate] = useState(moment());
+  const [currentMonth, setCurrentMonth] = useState(selectedDate.month());
+  const [currentYear, setCurrentYear] = useState(selectedDate.year());
   const [searchText, setSearchText] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [filteredData, setFilteredData] = useState([]);
+  const [originalData, setOriginalData] = useState([]);
+  const [weekStart, setWeekStart] = useState(moment().startOf('week'));
+  const [orientatoriOptions, setOrientatoriOptions] = useState([]);
 
-  const getDaysInMonth = (month, year) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
-
-  const generateCalendar = () => {
-    const daysInMonth = getDaysInMonth(currentMonth, currentYear);
-    const firstDay = new Date(currentYear, currentMonth).getDay();
-    const calendar = [];
-
-    // Fill in previous month's days
-    for (let i = 0; i < firstDay; i++) {
-      calendar.push(null);
-    }
-
-    // Fill in current month's days
-    for (let i = 1; i <= daysInMonth; i++) {
-      calendar.push(i);
-    }
-
-    return calendar;
-  };
-
-  const handlePrevMonth = () => {
-    if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear(currentYear - 1);
-    } else {
-      setCurrentMonth(currentMonth - 1);
+  const getOrientatori = async () => {
+    const userData = await AsyncStorage.getItem('user');
+    const user = userData ? JSON.parse(userData) : null;
+    const userFixId = user.role && user.role === "orientatore" ? user.utente : user._id;
+    try {
+      const response = await axios.get(`${network.serverip}/utenti/${userFixId}/orientatori`);
+      const data = response.data.orientatori;
+      setOrientatoriOptions(data);
+    } catch (error) {
+      console.error(error);
     }
   };
 
-  const handleNextMonth = () => {
-    if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear(currentYear + 1);
-    } else {
-      setCurrentMonth(currentMonth + 1);
-    }
+  useFocusEffect(
+    useCallback(() => {
+      setIsLoading(true);
+      fetchLeads();
+      getOrientatori();
+    }, [])
+  );
+
+  const moveWeek = (direction) => {
+    setWeekStart(prev => prev.clone().add(direction * 7, 'days'));
   };
 
-  const handleDatePress = (day) => {
-    if (day) {
-      const date = new Date(currentYear, currentMonth, day);
-      setSelectedDate(date);
-      navigation.navigate('DateAnalyze', { selectedDate: date });
-    }
-  };
-  
-  
-  const calendar = generateCalendar();
-  const showLogoutAlert = () => {
-    Alert.alert(
-      "Conferma Logout",
-      "Sei sicuro di voler effettuare il logout?",
-      [
-        {
-          text: "No",
-          onPress: () => console.log("Annullato"),
-          style: "cancel"
+  const fetchLeads = async () => {
+    try {
+      const userData = await AsyncStorage.getItem('user');
+      const user = userData ? JSON.parse(userData) : null;
+      const userFixId = user.role && user.role === "orientatore" ? user.utente : user._id;
+
+      const response = await fetch(network.serverip+'/get-lead-calendar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        { text: "Sì", onPress: () => console.log("Logout eseguito") }
-      ]
-    );
+        body: JSON.stringify({
+          _id: user._id,
+          role: user.role && user.role === "orientatore" ? "orientatore" : "utente",
+        }),
+      });
+
+      const data = await response.json();
+      const processedData = data.filter(lead => lead.recallDate && lead.recallHours).map(lead => ({
+        ...lead,
+        dateTime: moment(`${lead.recallDate} ${lead.recallHours}`, 'YYYY-MM-DD HH:mm:ss').toDate()
+      }));
+
+      setFilteredData(processedData);
+      setOriginalData(processedData);
+    } catch (error) {
+      console.error('Errore nel recupero dei dati:', error);
+      Alert.alert('Errore', 'Si è verificato un errore nel caricamento dei dati.');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const renderTimeSlots = () => {
+    const timeSlots = [];
+    const today = selectedDate.format('YYYY-MM-DD');
+    const eventsToday = filteredData.filter(event => moment(event.dateTime).format('YYYY-MM-DD') === today);
+
+    for (let hour = 7; hour <= 21; hour++) {
+      const formattedHour = hour.toString().padStart(2, '0');
+      const eventsInHour = eventsToday.filter(event => moment(event.dateTime).hour() === hour);
+
+      timeSlots.push(
+        <View style={styles.containerEvent} key={hour}>
+          <Text style={styles.timeLabel}>{`${formattedHour}:00`}</Text>
+          {eventsInHour.map(event => (
+            <TouchableOpacity
+              key={event._id}
+              style={styles.eventContainer}
+              onPress={() => navigation.navigate('filterData', {
+                item: event, 
+                orientatoriOptions, 
+                onUpdateLead: null,
+                setLeads: null, 
+                /*modificaLeadLocale: (idLead, nuoviDati) => {
+                  console.log("modificaLeadLocale chiamata con:", idLead, nuoviDati);
+                  modificaLead(idLead, nuoviDati);
+                  const nuoveLeads = leads.map(lead =>
+                    lead._id === idLead ? {...lead, ...nuoviDati} : lead
+                  );
+                  aggiornaColumnData(nuoveLeads);
+                },*/
+                fetchLeads,
+                //setColumnData
+              })}
+            >
+              <View style={styles.eventContent}>
+                <Text style={styles.eventTitle}>{`${event.nome} ${event.cognome}`}</Text>
+                <Text style={styles.eventTime}>{moment(event.dateTime).format('HH:mm')}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      );
+    }
+    return timeSlots;
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#000" />
+      </View>
+    );
+  }
 
   const monthNames = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
+    'January', 'February', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December',
   ];
+
+  const renderWeekDays = () => {
+    const weekDays = [];
+    for (let i = 0; i < 7; i++) {
+      const day = moment(weekStart).add(i, 'days');
+      const isSelected = day.isSame(selectedDate, 'day');
+      weekDays.push(
+        <TouchableOpacity 
+          key={i} 
+          onPress={() => setSelectedDate(day)}
+          style={[styles.dayContainer, isSelected && styles.selectedDayContainer]}
+        >
+          <Text style={[styles.dayName, isSelected && styles.selectedDayText]}>{day.format('ddd').charAt(0)}</Text>
+          <Text style={[styles.dayNumber, isSelected && styles.selectedDayText]}>{day.format('D')}</Text>
+        </TouchableOpacity>
+      );
+    }
+    return weekDays;
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.topCalendar}>
-          <TouchableOpacity style={styles.goback} onPress={() => navigation.navigate("People")}>
-            <Image source={require('../../assets/indietro.png')} style={[styles.icon, styles.filterIcon]} />
-            <Text style={styles.indietroText}>Indietro</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => showLogoutAlert()}>
-            <Image source={require('../../assets/Vector.png')} style={styles.icon} />
-          </TouchableOpacity>
-      </View>
-      <View style={styles.bodyContainer}>
-        <View style={styles.searchContainer}>
-        <Image
-            source={require('..//../assets/search.png')} // Update with your icon path
-            style={styles.searchIcon}
-          />
-          <TextInput
+      <View style={styles.calendarHeader}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backArrow}>
+          <Text style={styles.headerText}>{moment(selectedDate).format('MMMM YYYY')}</Text>
+        </TouchableOpacity>
+        <View style={styles.inputCont}>
+          <Image source={require('../../assets/search.png')} style={[styles.icon, styles.iconSearch]} />
+          <TextInput 
+            placeholder="Cerca..." 
             style={styles.searchInput}
-            placeholder="Search..."
             value={searchText}
             onChangeText={setSearchText}
           />
-        
         </View>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handlePrevMonth} style={styles.arrow}>
-            <Text style={styles.arrowText}>&lt;</Text>
-          </TouchableOpacity>
-          <Text style={styles.monthYear}>
-            {monthNames[currentMonth]} {currentYear}
-          </Text>
-          <TouchableOpacity onPress={handleNextMonth} style={styles.arrow}>
-            <Text style={styles.arrowText}>&gt;</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.weekdays}>
-          <Text style={styles.weekday}>D</Text>
-          <Text style={styles.weekday}>L</Text>
-          <Text style={styles.weekday}>M</Text>
-          <Text style={styles.weekday}>M</Text>
-          <Text style={styles.weekday}>G</Text>
-          <Text style={styles.weekday}>V</Text>
-          <Text style={styles.weekday}>S</Text>
-        </View>
-        <View style={styles.calendar}>
-          {calendar.map((day, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => handleDatePress(day)}
-              style={[styles.day]}
-            >
-              {day ? <Text style={styles.dayText}>{day}</Text> : null}
-            </TouchableOpacity>
-          ))}
-          </View>
       </View>
+
+      <View style={styles.weekContainer}>
+        <TouchableOpacity onPress={() => moveWeek(-1)} style={styles.arrowContainer}>
+          <Text style={styles.arrowText}>{'<'}</Text>
+        </TouchableOpacity>
+        {renderWeekDays()}
+        <TouchableOpacity onPress={() => moveWeek(1)} style={styles.arrowContainer}>
+          <Text style={styles.arrowText}>{'>'}</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={styles.calendarTime}>
+        {renderTimeSlots()}
+      </ScrollView>
     </View>
   );
 };
@@ -153,115 +190,144 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    padding: 0,
+    paddingTop: Platform.OS === 'ios' ? 38 : 18,
   },
-  topCalendar: {
-    paddingTop: 38,
-    height: 95,
-    paddingBottom: 15,
-    backgroundColor: '#F4F8FB',
-    paddingHorizontal: 20,
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    flexDirection: 'row',
-  },
-  goback: {
-    display: 'flex',
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  calendarHeader: {
     flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
   },
-  bodyContainer: {
-    paddingHorizontal: 16,
+  backArrow: {
+    padding: 8,
   },
-  indietroText: {
-    fontWeight: '600',
+  arrowText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#3471cc'
+  },
+  headerText: {
     fontSize: 16,
+    fontWeight: 'bold',
+    color: '#3471cc'
   },
-  searchContainer: {
+  inputCont: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    marginRight: 20,
-    marginTop: 20,
-    borderRadius:20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginHorizontal: 10,
+    borderRadius: 50,
+    borderColor: '#6F6F6F',
     borderWidth: 1,
-    paddingHorizontal: 16,
-    borderColor: '#ddd',
-    padding: 5,
-  },
-  filterIcon: {
-    marginRight: 20,
+    backgroundColor: '#fff',
+    flex: 1,
   },
   icon: {
-    width: 23,
-    height: 23,
-    resizeMode: 'contain',
+    width: 18,
+    height: 18,
+  },
+  iconSearch: {
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
-    padding: 8,
-    color:"#000",
- 
-    borderRadius: 4,
+    color: '#1f2937',
   },
-  searchIcon: {
-    width: 20,
-    height: 20,
-  },
-  header: {
+  weekContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    gap: 10,
+    paddingHorizontal: 20,
   },
-  monthYear: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color:'#3471cc'
-  },
-  arrow: {
-    width: 25,
-    height: 25,
-    backgroundColor:'#3471cc',
-    display: 'flex',
-    justifyContent: 'center',
+  dayContainer: {
     alignItems: 'center',
   },
-  arrowText: {
-    fontSize: 18,
-    color: '#fff',
-    fontWeight: '600'
+  dayName: {
+    fontSize: 12,
+    color: '#6F6F6F',
   },
-  weekdays: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  weekday: {
-    width: '14%',
+  dayNumber: {
     fontSize: 16,
     fontWeight: 'bold',
-    textAlign: 'center',
+  },
+  todayContainer: {
+    backgroundColor: '#3471cc',
+    borderRadius: 20,
+    padding: 5,
+  },
+  todayText: {
+    color: '#fff',
+  },
+  calendarTime: {
+    paddingHorizontal: 16,
+    marginTop: 10,
+  },
+  containerEvent: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    paddingBottom: 10,
+    marginBottom: 10,
+  },
+  timeLabel: {
+    fontSize: 14,
+    marginTop: 38,
+    fontWeight: '600',
+    borderBottomWidth: 2,
+    borderBottomColor: '#333',
+    paddingBottom: 5,
+  },
+  eventContainer: {
+    backgroundColor: '#3471CC',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  eventContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  eventTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    flex: 1,
+    color: '#fff'
+  },
+  eventTime: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#fff'
+  },
+  dayContainer: {
+    alignItems: 'center',
+    padding: 5,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+  },
+  selectedDayContainer: {
+    backgroundColor: '#3471cc',
+    borderRadius: 20,
+  },
+  dayName: {
+    fontSize: 12,
+    color: '#6F6F6F',
+  },
+  dayNumber: {
+    fontSize: 16,
+    fontWeight: 'bold',
     color: '#000',
   },
-  calendar: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  day: {
-    width: 32,
-    aspectRatio: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: 2,
-  },
-  
-  dayText: {
-    fontSize: 16,
-    color:'#000'
+  selectedDayText: {
+    color: '#fff',
   },
 });
 

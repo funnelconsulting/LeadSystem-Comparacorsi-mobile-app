@@ -2,7 +2,7 @@
   "expo": {
     "name": "LeadSystem",
     "slug": "LeadSystem",
-    "version": "1.0.7",
+    "version": "1.0.8",
     "orientation": "portrait",
     "icon": "./assets/applogo.png",
     "scheme": "myapp",
@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.leadsystem",
-      "buildNumber": "7"
+      "buildNumber": "8"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +26,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.Otacon.LeadSystem",
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "bundler": "metro",

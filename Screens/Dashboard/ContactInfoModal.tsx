@@ -5,12 +5,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import {Picker} from '@react-native-picker/picker';
 import RNPickerSelect from 'react-native-picker-select';
 
-const ContactInfoModal = ({ isVisible, onClose }) => {
+const ContactInfoModal = ({ isVisible, onClose, orientatoriOptions, applyFilters, resetFilters, recall, setRecall, orientatore, setOrientatore, selectedPriority, setSelectedPriority, startDate, setStartDate, endDate, setEndDate}) => {
   const navigation = useNavigation();
-  const [selectedPriority, setSelectedPriority] = useState(null);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isSelectingStartDate, setIsSelectingStartDate] = useState(true);
 
@@ -19,27 +15,47 @@ const ContactInfoModal = ({ isVisible, onClose }) => {
   };
 
   const onDateChange = (event, selectedDate) => {
-
     if (selectedDate) {
-      console.log("isSelectingStartDate", isSelectingStartDate);
+      let currentDate = new Date(selectedDate);
       
       if (isSelectingStartDate) {
-        setIsSelectingStartDate(false); // Now proceed to select end date
-
-        setStartDate(selectedDate);
-        setShowDatePicker(true); // Show picker again for end date
+        currentDate.setHours(0, 1, 0, 0); // Imposta l'orario a 00:01
+        setIsSelectingStartDate(false);
+        setStartDate(currentDate);
+        setShowDatePicker(true);
       } else {
-        setEndDate(selectedDate);
-        setShowDatePicker(false); // Close the picker after selecting end date
+        currentDate.setHours(23, 59, 0, 0); // Imposta l'orario a 23:59
+        setEndDate(currentDate);
+        setShowDatePicker(false);
       }
-    } else {
-      setShowDatePicker(false); // Close if canceled
     }
   };
 
   const openDatePicker = () => {
     setIsSelectingStartDate(true); // Start with selecting the start date
     setShowDatePicker(true); // Open date picker initially
+  };
+
+  const handleSaveFilters = () => {
+    const filters = {
+      startDate,
+      endDate,
+      orientatore,
+      priority: selectedPriority,
+      recall: recall
+    };
+    applyFilters(filters);
+    onClose();
+  };
+
+  const handleResetFilters = () => {
+    setStartDate(null);
+    setEndDate(null);
+    setOrientatore(null);
+    setSelectedPriority(null);
+    setRecall(false);
+    resetFilters();
+    onClose();
   };
 
   return (
@@ -81,13 +97,14 @@ const ContactInfoModal = ({ isVisible, onClose }) => {
             <Text style={styles.label}>Orientatore</Text>
             <View>
             <RNPickerSelect
-                onValueChange={(value) => console.log(value)}
-                items={[
-                  { label: 'Mario Rossi', value: 'mario_rossi' },
-                  { label: 'Luigi Bianchi', value: 'luigi_bianchi' },
-                  { label: 'Giovanni Verdi', value: 'giovanni_verdi' },
-                ]}
+                onValueChange={(value) => setOrientatore(value)}
+                items={orientatoriOptions.map((orientatore) => ({
+                  label: orientatore.nome + ' ' + orientatore.cognome,
+                  value: orientatore._id,
+                }))}
                 style={pickerSelectStyles}
+                value={orientatore}
+                placeholder={{ label: "Seleziona un orientatore", value: null }}
               />
             </View>
 
@@ -132,18 +149,18 @@ const ContactInfoModal = ({ isVisible, onClose }) => {
             <Text style={[styles.label, { alignSelf: 'center' }]}>Recall</Text>
             <View style={styles.recallContainer}>
               <Switch
-                value={rememberMe}
-                onValueChange={setRememberMe}
-                thumbColor={rememberMe ? '#34C759' : '#f4f3f4'}
+                value={recall}
+                onValueChange={setRecall}
+                thumbColor={recall ? '#34C759' : '#f4f3f4'}
                 trackColor={{ false: '#767577', true: '#34C759' }}
               />
             </View>
 
-            <TouchableOpacity style={styles.saveButton} onPress={onClose}>
+            <TouchableOpacity style={styles.saveButton} onPress={handleSaveFilters}>
               <Text style={styles.saveButtonText}>Salva Filtri</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.cancelButtonText}>Annulla</Text>
+            <TouchableOpacity style={styles.cancelButton} onPress={handleResetFilters}>
+              <Text style={styles.cancelButtonText}>Ripristina</Text>
             </TouchableOpacity>
           </View>
         </View>

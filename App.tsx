@@ -2,6 +2,7 @@ import * as React from 'react';
 import { View, Text, Button, TouchableOpacity, Image } from 'react-native';
 import { NavigationContainer ,useNavigation} from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import Toast from 'react-native-toast-message';
 
 import Login from './Screens/Login';
 import Dashboard from './Screens/Dashboard/Dashboard';
@@ -61,6 +62,7 @@ export default function App({navigation}) {
             )
           })}/>
       </Stack.Navigator>
+      <Toast ref={(ref) => Toast.setRef(ref)} />
     </NavigationContainer>
   );
 }
