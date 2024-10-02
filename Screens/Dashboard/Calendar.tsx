@@ -42,12 +42,38 @@ const Calendar = ({navigation}) => {
     setWeekStart(prev => prev.clone().add(direction * 7, 'days'));
   };
 
+  const formatDateString = (inputDate) => {
+    let parsedDate;
+    console.log(inputDate);
+  
+    // Prova a parsare con il formato DD-MM-YY HH:mm
+    if (moment(inputDate, 'DD-MM-YYYY HH:mm', true).isValid()) {
+      parsedDate = moment(inputDate, 'DD-MM-YYYY HH:mm');
+    } 
+    // Prova a parsare con il formato YY-MM-DD HH:mm
+    else if (moment(inputDate, 'YY-MM-DD HH:mm', true).isValid()) {
+      parsedDate = moment(inputDate, 'YY-MM-DD HH:mm');
+    }
+    else {
+      // Prova a parsare senza validazione
+      parsedDate = moment(inputDate, ['DD-MM-YYYY HH:mm', 'YY-MM-DD HH:mm']);
+    }
+  
+    if (!parsedDate.isValid()) {
+      throw new Error('Formato data non valido');
+    }
+  
+    const formattedDate = parsedDate.format('DD/MM/YYYY HH:mm');
+    const data = moment(formattedDate, 'DD/MM/YYYY HH:mm').toDate()
+    return data;
+  };
+
   const fetchLeads = async () => {
     try {
       const userData = await AsyncStorage.getItem('user');
       const user = userData ? JSON.parse(userData) : null;
       const userFixId = user.role && user.role === "orientatore" ? user.utente : user._id;
-
+  
       const response = await fetch(network.serverip+'/get-lead-calendar', {
         method: 'POST',
         headers: {
@@ -58,13 +84,27 @@ const Calendar = ({navigation}) => {
           role: user.role && user.role === "orientatore" ? "orientatore" : "utente",
         }),
       });
-
+  
       const data = await response.json();
-      const processedData = data.filter(lead => lead.recallDate && lead.recallHours).map(lead => ({
-        ...lead,
-        dateTime: moment(`${lead.recallDate} ${lead.recallHours}`, 'YYYY-MM-DD HH:mm:ss').toDate()
-      }));
-
+      const processedData = [];
+  
+      data.forEach(lead => {
+        if (lead.recallDate && lead.recallHours && lead.recallHours?.trim() !== "") {
+          processedData.push({
+            ...lead,
+            dateTime: moment(`${lead.recallDate} ${lead.recallHours}`, 'YYYY-MM-DD HH:mm:ss').toDate(),
+            eventType: 'recall'
+          });
+        }
+        if (lead.appDate) {
+          processedData.push({
+            ...lead,
+            dateTime: formatDateString(lead.appDate),
+            eventType: 'appointment'
+          });
+        }
+      });
+  
       setFilteredData(processedData);
       setOriginalData(processedData);
     } catch (error) {
@@ -90,7 +130,10 @@ const Calendar = ({navigation}) => {
           {eventsInHour.map(event => (
             <TouchableOpacity
               key={event._id}
-              style={styles.eventContainer}
+              style={[
+                styles.eventContainer,
+                event.eventType === 'appointment' ? styles.appointmentEvent : styles.recallEvent
+              ]}
               onPress={() => navigation.navigate('filterData', {
                 item: event, 
                 orientatoriOptions, 
@@ -286,10 +329,15 @@ const styles = StyleSheet.create({
     paddingBottom: 5,
   },
   eventContainer: {
-    backgroundColor: '#3471CC',
     padding: 12,
     borderRadius: 8,
     marginTop: 8,
+  },
+  recallEvent: {
+    backgroundColor: '#3471CC',
+  },
+  appointmentEvent: {
+    backgroundColor: '#4CAF50', // Verde per gli appuntamenti
   },
   eventContent: {
     flexDirection: 'row',

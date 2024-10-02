@@ -4,6 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Switch, Image, Ale
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import network from '@/constants/Network';
+import { ScrollView } from 'react-native-gesture-handler';
 
 const Login = ({navigation}) => {
   const [email, setEmail] = useState('');
@@ -38,7 +39,9 @@ const Login = ({navigation}) => {
 
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+    style={styles.container}
+    contentContainerStyle={styles.contentContainer}>
       <Image
         source={require('..//assets/logo.png')}
         style={styles.logo}
@@ -80,16 +83,20 @@ const Login = ({navigation}) => {
       <TouchableOpacity>
         <Text style={styles.forgotPasswordText}>Hai dimenticato la password?</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  contentContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    paddingVertical: 20,
+    height: '100%',
   },
   logo: {
     width: 100,

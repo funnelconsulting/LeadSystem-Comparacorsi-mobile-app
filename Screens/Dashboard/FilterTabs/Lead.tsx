@@ -354,6 +354,18 @@ const LeadDetails = () => {
     );
   }
 
+  const chiamaNumero = (numero) => {
+    if (Platform.OS === 'android') {
+      Linking.openURL(`tel:${numero}`);
+    } else {
+      Linking.openURL(`telprompt:${numero}`);
+    }
+  };
+
+  const apriEmail = (indirizzo) => {
+    Linking.openURL(`mailto:${indirizzo}`);
+  };
+
   return (
     <ScrollView style={styles.container}  contentContainerStyle={styles.contentContainer}>
       <View style={styles.header}>
@@ -451,24 +463,32 @@ const LeadDetails = () => {
         </Text>
       </View>}
       <View style={styles.separator} />
+      <TouchableOpacity onPress={() => chiamaNumero(telefono)}>
        <View style={styles.inputGroup}>
         <Text style={styles.label}>Telefono</Text>
-        <TextInput
-          style={styles.input}
-          value={telefono}
-          onChangeText={setTelefono}
-          keyboardType="phone-pad"
-        />
+          <TextInput
+            style={styles.input}
+            value={telefono}
+            editable={false}
+            onChangeText={setTelefono}
+            keyboardType="phone-pad"
+          />
       </View>
+      </TouchableOpacity>
+      <TouchableOpacity
+          onPress={() => apriEmail(email)}
+        >
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Email</Text>
         <TextInput
           style={styles.input}
           value={email}
           onChangeText={setEmail}
+          editable={false}
           keyboardType="email-address"
         />
       </View>
+      </TouchableOpacity>
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Orientatore</Text>
         <RNPickerSelect
@@ -486,6 +506,7 @@ const LeadDetails = () => {
         <Text style={styles.label}>Campagna</Text>
         <TextInput
           style={styles.input}
+          editable={false}
           value={(item.campagna || item.provenienza) && leadF?.campagna ? mapCampagnaPerLeadsystem(leadF?.campagna) : ""}
           onChangeText={setCampagna}
         />

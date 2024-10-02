@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Image, Platform, ActivityIndicator } from 'react-native';
 import ContactInfoModal from './ContactInfoModal';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import LeadsColumn from '../Dashboard/FilterTabs/LeadsColumn';
 import TypeSelectorModal from './FilterTabs/TypeSelectorModal'
 import { Alert } from 'react-native';
@@ -23,9 +23,11 @@ const People = ({ navigation }) => {
   const [selectedPriority, setSelectedPriority] = useState(null);
   const [recall, setRecall] = useState(false);
   const [orientatore, setOrientatore] = useState(null)
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date(new Date().setDate(new Date().getDate() + 1)));
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loadOtherLeads, setLoadOtherLeads] = useState(false);
+  const [loadindInside, setLoadingInside] = useState(false);
 
   const handleScaleToggle = () => {
     setIsZoomedOut(prevState => !prevState);
@@ -72,6 +74,7 @@ const People = ({ navigation }) => {
 
   useFocusEffect(
     useCallback(() => {
+      setLoadOtherLeads(false)
       const fetchData = async () => {
         const userData = await AsyncStorage.getItem('user');
         const user = userData ? JSON.parse(userData) : null;
@@ -120,7 +123,54 @@ const People = ({ navigation }) => {
     } catch (error) {
       console.error("Errore nel recupero delle lead:", error.message);
     } finally {
-      setLoading(false); // Imposta loading a false quando il fetch è completato
+      setLoading(false)
+    }
+  };
+
+  const fetchOtherLeads = async () => {
+    console.log("Prendo le altre lead")
+    const userData = await AsyncStorage.getItem('user');
+    const user = userData ? JSON.parse(userData) : null;
+    try {
+      const response = await axios.post(network.serverip + '/get-other-leads', {
+        _id: user._id
+      });
+      setLeads(prevLeads => [...prevLeads, ...response.data]);
+      setOriginalLeads(prevOriginalLeads => [...prevOriginalLeads, ...response.data]);
+    } catch (error) {
+      console.error("Errore nel recupero delle altre lead:", error.message);
+    } finally {
+      setLoadOtherLeads(true)
+      setLoadingInside(false)
+    }
+  };
+
+  const handleLoadOtherLeads = async () => {
+    setLoadingInside(true)
+        const userData = await AsyncStorage.getItem('user');
+        const user = userData ? JSON.parse(userData) : null;
+        if (!user.role || user.role !== "orientatore"){
+          await fetchOtherLeads();
+        } else {
+          await fetchOtherLeadsOri();
+        }
+  }
+  
+  const fetchOtherLeadsOri = async () => {
+    console.log("Prendo le altre lead per orientatori")
+    const userData = await AsyncStorage.getItem('user');
+    const user = userData ? JSON.parse(userData) : null;
+    try {
+      const response = await axios.post(network.serverip + '/get-other-leads-ori', {
+        _id: user._id
+      });
+      setLeads(prevLeads => [...prevLeads, ...response.data]);
+      setOriginalLeads(prevOriginalLeads => [...prevOriginalLeads, ...response.data]);
+    } catch (error) {
+      console.error("Errore nel recupero delle altre lead per orientatori:", error.message);
+    } finally {
+      setLoadOtherLeads(true)
+      setLoadingInside(false)
     }
   };
 
@@ -238,6 +288,10 @@ const People = ({ navigation }) => {
             setLeads={setLeads}
             modificaLead={modificaLead}
             fetchLeads={fetchLeads}
+            setLoadOtherLeads={setLoadOtherLeads}
+            loadOtherLeads={loadOtherLeads}
+            handleLoadOtherLeads={handleLoadOtherLeads}
+            loadindInside={loadindInside}
             />
         )}
 
@@ -245,12 +299,14 @@ const People = ({ navigation }) => {
         style={{backgroundColor:'#F4F8FB',position:'absolute',
         width:40,height:40,bottom:80,right:20,borderRadius:50,
         borderWidth:0.5,borderColor:'#000',alignItems:'center',justifyContent:'center'}}>
-          <Image source={require('..//..//assets/search2.png')} style={{width:19,height:19,}} />
+          {isZoomedOut ? 
+          <Image source={require('..//..//assets/searchPiu.png')} style={{width:19,height:19,}} /> : 
+          <Image source={require('..//..//assets/searchMeno.png')} style={{width:19,height:19,}} />}
        </TouchableOpacity>
       { isModalVisible ?
        <ContactInfoModal 
-        isVisible={isModalVisible} 
-        onClose={hideModal} 
+        isVisible={isModalVisible}
+        onClose={hideModal}
         orientatoriOptions={orientatoriOptions}
         applyFilters={applyFilters}
         resetFilters={resetFilters}

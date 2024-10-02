@@ -12,21 +12,28 @@
       "resizeMode": "cover",
       "backgroundColor": "#00000000"
     },
+    "notification":{
+      "icon":"./assets/applogo.png"
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.leadsystem",
-      "buildNumber": "8"
+      "buildNumber": "9",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/applogo.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.Otacon.LeadSystem",
-      "versionCode": 3
+      "versionCode": 4,
+      "permissions": ["NOTIFICATIONS"]
     },
     "web": {
       "bundler": "metro",
@@ -38,9 +45,19 @@
         "projectId": "c893217e-1758-46d2-b886-0bb87fa90020"
       }
     },
-    "runtimeVersion": "1.0.3",
+    "runtimeVersion": "1.0.4",
     "updates": {
       "url": "https://u.expo.dev/c893217e-1758-46d2-b886-0bb87fa90020"
-    }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/applogo.png",
+          "color": "#ffffff",
+          "sounds": ["./assets/notification-sound.wav"]
+        }
+      ]
+    ]
   }
 }

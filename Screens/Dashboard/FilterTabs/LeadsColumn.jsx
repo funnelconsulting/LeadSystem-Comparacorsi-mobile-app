@@ -7,11 +7,12 @@ import {
   Image,
   ScrollView,
   Animated,
-  Dimensions
+  Dimensions,
+  ActivityIndicator
 } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 
-const LeadsColumns = ({showModalEdit, hideModalEdit, leads, isZoomedOut, orientatoriOptions, setLeads, onUpdateLead, modificaLead, fetchLeads}) => {
+const LeadsColumns = ({loadOtherLeads, loadindInside, setLoadOtherLeads, leads, isZoomedOut, orientatoriOptions, setLeads, onUpdateLead, modificaLead, fetchLeads, handleLoadOtherLeads}) => {
   const navigation = useNavigation();
   const scrollRef = useRef();
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -77,10 +78,20 @@ const LeadsColumns = ({showModalEdit, hideModalEdit, leads, isZoomedOut, orienta
   >
     <View style={[styles.topColumn, isZoomedOut && styles.topColumnZoomedOut]}>
       <Text style={[styles.columnTitle, isZoomedOut && styles.columnTitleZoomedOut]}>{title}</Text>
-      <View style={[styles.circleTitle, isZoomedOut && styles.circleTitleZoomedOut]}>
-        <Text style={[styles.numberTitle, isZoomedOut && styles.numberTitleZoomedOut]}>{columnData[columnName].length}</Text>
-      </View>
+      {(title === "Non valido" || title === "Lead persa") && !loadOtherLeads ?
+        <TouchableOpacity onPress={handleLoadOtherLeads} style={[styles.circleTitle, isZoomedOut && styles.circleTitleZoomedOut]}>
+          <Text style={[styles.refreshIcon, isZoomedOut && styles.refreshIconZoomedOut]}>↻</Text>
+        </TouchableOpacity>
+        :
+        <View style={[styles.circleTitle, isZoomedOut && styles.circleTitleZoomedOut]}>
+          <Text style={[styles.numberTitle, isZoomedOut && styles.numberTitleZoomedOut]}>{columnData[columnName].length}</Text>
+        </View>
+      }
     </View>
+    {loadindInside ?
+    <ScrollView contentContainerStyle={styles.listLoader}>
+      <ActivityIndicator size="small" color="#000" />
+    </ScrollView> :
     <ScrollView contentContainerStyle={styles.list}>
       {columnData[columnName]
       .sort((a, b) => new Date(b.data) - new Date(a.data))
@@ -168,10 +179,10 @@ const LeadsColumns = ({showModalEdit, hideModalEdit, leads, isZoomedOut, orienta
                   />
                 </View>
                 )}
-                <Image
+                {item.recallDate && item?.recallHours?.trim() !== "" && <Image
                   source={require("..//..//../assets/calendar.png")}
                   style={[styles.icon, isZoomedOut && styles.iconZoomedOut]}
-                />
+                />}
               </View>
             </View>
             <Image
@@ -181,7 +192,7 @@ const LeadsColumns = ({showModalEdit, hideModalEdit, leads, isZoomedOut, orienta
           </View>
         </TouchableOpacity>
       ))}
-    </ScrollView>
+    </ScrollView>}
   </View>
   );
 
@@ -254,6 +265,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         zIndex: 1000,
         transition: "all 0.3s ease-in-out",
+      },
+      listLoader: {
+        display: "flex",
+        alignItems: 'center'
       },
       cardGreen: {
         padding: 10,
@@ -392,6 +407,13 @@ const styles = StyleSheet.create({
         height: 14,
         marginLeft: 5,
         transition: "all 0.3s ease-in-out",
+      },
+      refreshIcon: {
+        fontSize: 20,
+        color: '#000',
+      },
+      refreshIconZoomedOut: {
+        fontSize: 14,
       },
       iconZoomedOut: {
         width: 7.8, // Ridotto a 0.7

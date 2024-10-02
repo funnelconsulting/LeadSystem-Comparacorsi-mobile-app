@@ -28,10 +28,14 @@ const ContactInfoModal = ({ isVisible, onClose, orientatoriOptions, applyFilters
         setEndDate(currentDate);
         setShowDatePicker(false);
       }
+    } else {
+      setShowDatePicker(false);
     }
   };
 
   const openDatePicker = () => {
+    setStartDate(new Date())
+    setEndDate(new Date())
     setIsSelectingStartDate(true); // Start with selecting the start date
     setShowDatePicker(true); // Open date picker initially
   };
@@ -160,7 +164,7 @@ const ContactInfoModal = ({ isVisible, onClose, orientatoriOptions, applyFilters
               <Text style={styles.saveButtonText}>Salva Filtri</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.cancelButton} onPress={handleResetFilters}>
-              <Text style={styles.cancelButtonText}>Ripristina</Text>
+              <Text style={styles.cancelButtonText}>Rimuovi Filtri</Text>
             </TouchableOpacity>
           </View>
         </View>
