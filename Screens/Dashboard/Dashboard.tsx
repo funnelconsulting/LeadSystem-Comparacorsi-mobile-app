@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { Image, StyleSheet, TouchableOpacity } from 'react-native';
@@ -6,10 +6,16 @@ import People from './People';
 import Calendar from './Calendar';
 import WhatsApp from '../../Screens/Whatsapp';
 import FastImage from 'react-native-fast-image'
+import { registerForPushNotificationsAsync } from '@/NotificationHandler';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import network from '@/constants/Network';
+import * as Notifications from 'expo-notifications';
 
 const Tab = createBottomTabNavigator();
 
 const Dashboard = () => {
+
   return (
 
       <Tab.Navigator

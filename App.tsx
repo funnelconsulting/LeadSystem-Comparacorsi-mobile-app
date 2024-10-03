@@ -23,21 +23,17 @@ const Stack = createStackNavigator();
 export default function App({navigation}) {
   const [isLoading, setIsLoading] = React.useState(true);
   const [expoPushToken, setExpoPushToken] = React.useState('');
-  const notificationListener = React.useRef();
-  const responseListener = React.useRef();
 
   React.useEffect(() => {
     const setupNotifications = async () => {
-      const token = await registerForPushNotificationsAsync();
+      const {token, tokenServer} = await registerForPushNotificationsAsync();
       if (token) {
         setExpoPushToken(token);
         await AsyncStorage.setItem('pushToken', token);
-        // Invia il token al server
+        await AsyncStorage.setItem('pushTokenServer', tokenServer);
         try {
-          const userData = await AsyncStorage.getItem('user');
-          const user = userData ? JSON.parse(userData) : null;
-          await axios.post(network.serverip+'/update-push-token-expo', { userId: user._id, token });
-          console.log('Token inviato al server con successo');
+          await axios.post(network.serverip + '/save-push-token-expo', { token, tokenServer });
+          console.log('Token salvato inizialmente con successo');
         } catch (error) {
           console.error('Errore nell\'invio del token al server:', error);
         }
@@ -48,24 +44,19 @@ export default function App({navigation}) {
 
     setupNotifications();
 
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
       console.log(notification);
     });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
       console.log(response);
     });
 
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 3000);
-
     return () => {
-      Notifications.removeNotificationSubscription(notificationListener.current);
-      Notifications.removeNotificationSubscription(responseListener.current);
+      Notifications.removeNotificationSubscription(notificationListener);
+      Notifications.removeNotificationSubscription(responseListener);
     };
   }, []);
-
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Splash" screenOptions={{headerShown:false}}>

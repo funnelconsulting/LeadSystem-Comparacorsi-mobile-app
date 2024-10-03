@@ -72,6 +72,31 @@ const People = ({ navigation }) => {
     }
   };
 
+  useEffect(() => {
+    const updateTokenWithUserId = async () => {
+      const userData = await AsyncStorage.getItem('user');
+      const user = userData ? JSON.parse(userData) : null;
+      const pushToken = await AsyncStorage.getItem('pushToken');
+      console.log(pushToken, user._id)
+      const userFixId = user.role && user.role === "orientatore" ? user.utente : user._id;
+      if (user && user._id && pushToken) {
+        try {
+          await axios.post(network.serverip + '/update-push-token-expo', {
+            userId: userFixId,
+            orientatoreId: user.role && user.role == "orientatore" ? null : user._id, 
+            token: pushToken,
+            ruolo: user.role && user.role == "orientatore" ? 'orientatore' : 'utente'
+          });
+          console.log('Token aggiornato con userId con successo');
+        } catch (error) {
+          console.error('Errore nell\'aggiornamento del token con userId:', error);
+        }
+      }
+    };
+
+    updateTokenWithUserId();
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       setLoadOtherLeads(false)

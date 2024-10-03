@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "819450838663",
+    "project_id": "leadsystem-app",
+    "storage_bucket": "leadsystem-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:819450838663:android:34ba9095065b3619bfc222",
+        "android_client_info": {
+          "package_name": "com.leadsystem"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBG8BLO_nhwoUNoZ08LrthYv5iMOzDuniQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
