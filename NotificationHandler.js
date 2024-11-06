@@ -13,7 +13,7 @@ Notifications.setNotificationHandler({
 
 export async function registerForPushNotificationsAsync() {
   let token;
-  let tokenServer;
+  //let tokenServer;
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
@@ -36,7 +36,7 @@ export async function registerForPushNotificationsAsync() {
       return;
     }
     token = (await Notifications.getExpoPushTokenAsync({ projectId: Constants.expoConfig.extra.eas.projectId })).data;
-    tokenServer = (await Notifications.getDevicePushTokenAsync({ projectId: Constants.expoConfig.extra.eas.projectId })).data;
+    //tokenServer = (await Notifications.getDevicePushTokenAsync({ projectId: Constants.expoConfig.extra.eas.projectId })).data;
   } else {
     console.log('Must use physical device for Push Notifications');
   }

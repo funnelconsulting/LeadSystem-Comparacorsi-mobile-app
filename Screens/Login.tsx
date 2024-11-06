@@ -80,9 +80,9 @@ const Login = ({navigation}) => {
           <Text style={styles.buttonText}>Accedi</Text>
         )}
       </TouchableOpacity>
-      <TouchableOpacity>
+      {/*<TouchableOpacity>
         <Text style={styles.forgotPasswordText}>Hai dimenticato la password?</Text>
-      </TouchableOpacity>
+      </TouchableOpacity>*/}
     </ScrollView>
   );
 };
@@ -107,11 +107,13 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     color: '#000',
+    fontFamily: 'Poppins-SemiBold',
   },
   subtitle: {
     fontSize: 16,
     color: '#AAB0B7',
     marginBottom: 20,
+    fontFamily: 'Poppins-Regular',
   },
   input: {
     width: '80%',
@@ -121,8 +123,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     marginBottom: 20,
     paddingHorizontal: 10,
-    fontSize: 16,
+    fontSize: 14,
     color: '#000',
+    fontFamily: 'Poppins-Regular',
   },
   rememberMeContainer: {
     flexDirection: 'row',
@@ -134,6 +137,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#000',
     marginLeft: 10,
+    fontFamily: 'Poppins-Regular',
   },
   button: {
     width: '80%',
@@ -146,11 +150,13 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     color: '#FFF',
+    fontFamily: 'Poppins-SemiBold',
   },
   forgotPasswordText: {
     fontSize: 14,
     color: '#000',
     textDecorationLine: 'underline',
+    fontFamily: 'Poppins-Regular',
   },
 });
 

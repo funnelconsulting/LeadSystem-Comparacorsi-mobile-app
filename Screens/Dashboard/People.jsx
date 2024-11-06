@@ -9,18 +9,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import network from '@/constants/Network';
 import axios from 'axios';
 import moment from 'moment';
+import { useLeads } from '@/context/LeadContext';
 
 const People = ({ navigation }) => {
+  const { leads, isLoading, loading, setLoading, setLeads, fetchLeads, updateLead, originalLeads, setOriginalLeads } = useLeads();
   const [isModalVisible, setModalVisible] = useState(false);
   const [isModalVisibleEdit, setModalVisibleEdit] = useState(false)
   const showModalEdit = () => setModalVisibleEdit(true);
   const hideModalEdit = () => setModalVisibleEdit(false);
-  const [loading, setLoading] = useState(true); // Aggiungi questo stato
-  const [leads, setLeads] = useState([]);
-  const [originalLeads, setOriginalLeads] = useState([])
+  //const [loading, setLoading] = useState(true); // Aggiungi questo stato
+  //const [leads, setLeads] = useState([]);
+  //const [originalLeads, setOriginalLeads] = useState([])
   const [isZoomedOut, setIsZoomedOut] = useState(false);
   const [orientatoriOptions, setOrientatoriOptions] = useState([]); // Nuovo stato per gli orientatori
-  const [selectedPriority, setSelectedPriority] = useState(null);
+  const [selectedPriorities, setSelectedPriorities] = useState([]);
   const [recall, setRecall] = useState(false);
   const [orientatore, setOrientatore] = useState(null)
   const [startDate, setStartDate] = useState(null);
@@ -66,7 +68,7 @@ const People = ({ navigation }) => {
       const response = await axios.get(`${network.serverip}/utenti/${userFixId}/orientatori`);
       const data = response.data.orientatori;
       setOrientatoriOptions(data);
-      fetchLeads(data);
+      //fetchLeads(data);
     } catch (error) {
       console.error(error);
     }
@@ -99,16 +101,11 @@ const People = ({ navigation }) => {
 
   useFocusEffect(
     useCallback(() => {
-      setLoadOtherLeads(false)
       const fetchData = async () => {
         const userData = await AsyncStorage.getItem('user');
         const user = userData ? JSON.parse(userData) : null;
-        setLoading(true);
         if (!user.role || user.role !== "orientatore"){
           await getOrientatori();
-        }
-        if (user.role && user.role === "orientatore") {
-          await fetchLeadsOrientatori();
         }
       };
 
@@ -116,7 +113,7 @@ const People = ({ navigation }) => {
     }, [])
   );
 
-  const fetchLeads = async (orientatori) => {
+  /*const fetchLeads = async (orientatori) => {
     console.log("Prendo le lead")
     const userData = await AsyncStorage.getItem('user');
     const user = userData ? JSON.parse(userData) : null;
@@ -132,7 +129,7 @@ const People = ({ navigation }) => {
     } finally {
       setLoading(false); // Imposta loading a false quando il fetch è completato
     }
-  };
+  };*/
 
   const fetchLeadsOrientatori = async () => {
     console.log("Prendo le lead")
@@ -200,9 +197,7 @@ const People = ({ navigation }) => {
   };
 
   const handleUpdateLead = (updatedLead) => {
-    setLeads((prevLeads) =>
-      prevLeads.map((lead) => (lead._id === updatedLead._id ? updatedLead : lead))
-    );
+    updateLead(updatedLead);
   };
 
   const modificaLead = (idLead, nuoviDati) => {
@@ -218,6 +213,17 @@ const People = ({ navigation }) => {
       }
       return lead;
     }));
+    setOriginalLeads(leadsPrecedenti => leadsPrecedenti.map(lead => {
+      if (lead._id === idLead) {
+        return {
+          ...lead,
+          esito: nuoviDati.esito || lead.esito,
+          motivo: nuoviDati.motivo || lead.motivo,
+          fatturato: nuoviDati.fatturato || lead.fatturato
+        };
+      }
+      return lead;
+    }))
   };
 
   const applyFilters = (filters) => {
@@ -228,7 +234,8 @@ const People = ({ navigation }) => {
       const isDateInRange = (!filters.startDate || leadDate >= new Date(filters.startDate)) &&
                             (!filters.endDate || leadDate <= new Date(filters.endDate));
   
-      const isPriorityMatch = filters.priority === null || lead.priorità === filters.priority;
+      // Modifica la logica per controllare se la priorità della lead è nell'array delle priorità selezionate
+      const isPriorityMatch = filters.priorities.length === 0 || filters.priorities.includes(lead.priorità);
   
       const isOrientatoreMatch = !filters.orientatore || lead?.orientatori?._id === filters.orientatore;
   
@@ -250,7 +257,12 @@ const People = ({ navigation }) => {
 
   const resetFilters = () => {
     setLeads(originalLeads);
+    setSelectedPriorities([]);
   };
+
+  useEffect(() => {
+    fetchLeads()
+  }, [])
 
   const filterLeads = (term) => {
     if (!term) {
@@ -335,8 +347,8 @@ const People = ({ navigation }) => {
         orientatoriOptions={orientatoriOptions}
         applyFilters={applyFilters}
         resetFilters={resetFilters}
-        selectedPriority={selectedPriority}
-        setSelectedPriority={setSelectedPriority}
+        selectedPriority={selectedPriorities}
+        setSelectedPriority={setSelectedPriorities}
         recall={recall}
         setRecall={setRecall}
         orientatore={orientatore}
@@ -405,7 +417,8 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     marginLeft: 10,
-    color: '#1f2937',
+    color: '#000',
+    fontFamily: 'Poppins-Regular',
   },
   filterIcon: {
     marginRight: 20,

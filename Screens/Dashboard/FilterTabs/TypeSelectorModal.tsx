@@ -53,7 +53,7 @@ const TypeSelectorModal = ({ isVisible, onClose, lead, item, esito, onSave, modi
           };
           const response = await axios.put(network.serverip+`/lead/${userFixId}/update/${item._id}`, modifyLead);
           onSave(selectedOption);
-          await modificaLeadLocale(item._id, modifyLead);
+          modificaLeadLocale(item._id, modifyLead);
           await onClose();
           Toast.show({
             type: 'success',
@@ -93,7 +93,7 @@ const TypeSelectorModal = ({ isVisible, onClose, lead, item, esito, onSave, modi
           text2Style: styles.toastText2, // Stile per il testo secondario
         });
         onSave(selectedOption);
-        await modificaLeadLocale(item._id, modifyLead);
+        modificaLeadLocale(item._id, modifyLead);
         onClose();
       } catch (error) {
         console.error(error);
@@ -223,17 +223,18 @@ const TypeSelectorModal = ({ isVisible, onClose, lead, item, esito, onSave, modi
 
 const pickerSelectStyles = StyleSheet.create({
   inputIOS: {
-    fontSize: 16,
-    paddingVertical: 12,
+    fontSize: 14,
+    paddingVertical: 8,
     paddingHorizontal: 10,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 4,
     color: 'black',
     paddingRight: 30,
+    fontFamily: 'Poppins-Regular',
   },
   inputAndroid: {
-    fontSize: 16,
+    fontSize: 14,
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderWidth: 1,
@@ -241,6 +242,7 @@ const pickerSelectStyles = StyleSheet.create({
     borderRadius: 8,
     color: 'black',
     paddingRight: 30,
+    fontFamily: 'Poppins-Regular',
   },
 });
 
@@ -298,8 +300,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#3471cc',
   },
   optionText: {
-    fontSize: 16,
-    color:'#000'
+    fontSize: 14,
+    color:'#000',
+    fontFamily: 'Poppins-Regular',
   },
   inputContainer: {
     marginBottom: 10,
@@ -307,13 +310,15 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     marginBottom: 5,
-    color:'#000'
+    color:'#000',
+    fontFamily: 'Poppins-Regular',
   },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
     padding: 10,
+    fontFamily: 'Poppins-Regular',
   },
   buttonContainer: {
     backgroundColor: '#007bff',
@@ -324,6 +329,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontSize: 16,
+    fontFamily: 'Poppins-SemiBold',
   },
   toast: {
     backgroundColor: '#333', // Colore di sfondo del toast
@@ -334,10 +340,12 @@ const styles = StyleSheet.create({
     fontSize: 16, // Dimensione del testo principale
     fontWeight: 'bold', // Grassetto
     color: '#000', // Colore del testo principale
+    fontFamily: 'Poppins-SemiBold',
   },
   toastText2: {
     fontSize: 14, // Dimensione del testo secondario
     color: '#000', // Colore del testo secondario
+    fontFamily: 'Poppins-Regular',
   },
 });
 

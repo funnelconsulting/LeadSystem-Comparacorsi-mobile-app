@@ -2,16 +2,18 @@ import network from '@/constants/Network';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, TextInput, Image, Alert, Platform, ActivityIndicator, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, TextInput, Image, Alert, Platform, ActivityIndicator, ScrollView, PanResponder } from 'react-native';
 import moment from 'moment';
 import axios from 'axios';
+import { useLeads } from '@/context/LeadContext';
 
 const Calendar = ({navigation}) => {
+  const { leads, isLoading, loading, setLoading, setLeads, fetchLeads, updateLead } = useLeads();
   const [selectedDate, setSelectedDate] = useState(moment());
   const [currentMonth, setCurrentMonth] = useState(selectedDate.month());
   const [currentYear, setCurrentYear] = useState(selectedDate.year());
   const [searchText, setSearchText] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  //const [isLoading, setIsLoading] = useState(true);
   const [filteredData, setFilteredData] = useState([]);
   const [originalData, setOriginalData] = useState([]);
   const [weekStart, setWeekStart] = useState(moment().startOf('week'));
@@ -30,10 +32,35 @@ const Calendar = ({navigation}) => {
     }
   };
 
+  const panResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      return Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      if (gestureState.dx > 0) {
+        // Swipe a destra: giorno precedente
+        setSelectedDate(prevDate => {
+          const newDate = prevDate.clone().subtract(1, 'days');
+          if (newDate.isBefore(weekStart)) {
+            moveWeek(-1);
+          }
+          return newDate;
+        });
+      } else if (gestureState.dx < 0) {
+        // Swipe a sinistra: giorno successivo
+        setSelectedDate(prevDate => {
+          const newDate = prevDate.clone().add(1, 'days');
+          if (newDate.isAfter(weekStart.clone().add(7, 'days'))) {
+            moveWeek(1);
+          }
+          return newDate;
+        });
+      }
+    },
+  });
+
   useFocusEffect(
     useCallback(() => {
-      setIsLoading(true);
-      fetchLeads();
       getOrientatori();
     }, [])
   );
@@ -68,52 +95,30 @@ const Calendar = ({navigation}) => {
     return data;
   };
 
-  const fetchLeads = async () => {
-    try {
-      const userData = await AsyncStorage.getItem('user');
-      const user = userData ? JSON.parse(userData) : null;
-      const userFixId = user.role && user.role === "orientatore" ? user.utente : user._id;
-  
-      const response = await fetch(network.serverip+'/get-lead-calendar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          _id: user._id,
-          role: user.role && user.role === "orientatore" ? "orientatore" : "utente",
-        }),
-      });
-  
-      const data = await response.json();
-      const processedData = [];
-  
-      data.forEach(lead => {
+  useEffect(() => {
+    if (leads.length > 0) {
+      const processedData = leads.flatMap(lead => {
+        const events = [];
         if (lead.recallDate && lead.recallHours && lead.recallHours?.trim() !== "") {
-          processedData.push({
+          events.push({
             ...lead,
             dateTime: moment(`${lead.recallDate} ${lead.recallHours}`, 'YYYY-MM-DD HH:mm:ss').toDate(),
             eventType: 'recall'
           });
         }
         if (lead.appDate) {
-          processedData.push({
+          events.push({
             ...lead,
             dateTime: formatDateString(lead.appDate),
             eventType: 'appointment'
           });
         }
+        return events;
       });
-  
       setFilteredData(processedData);
       setOriginalData(processedData);
-    } catch (error) {
-      console.error('Errore nel recupero dei dati:', error);
-      Alert.alert('Errore', 'Si è verificato un errore nel caricamento dei dati.');
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [leads]);
 
   const renderTimeSlots = () => {
     const timeSlots = [];
@@ -196,7 +201,7 @@ const Calendar = ({navigation}) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} {...panResponder.panHandlers}>
       <View style={styles.calendarHeader}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backArrow}>
           <Text style={styles.headerText}>{moment(selectedDate).format('MMMM YYYY')}</Text>
@@ -252,12 +257,14 @@ const styles = StyleSheet.create({
   arrowText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#3471cc'
+    color: '#3471cc',
+    fontFamily: 'Poppins-SemiBold'
   },
   headerText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#3471cc'
+    color: '#3471cc',
+    fontFamily: 'Poppins-SemiBold',
   },
   inputCont: {
     flexDirection: 'row',
@@ -291,16 +298,15 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 20,
   },
-  dayContainer: {
-    alignItems: 'center',
-  },
   dayName: {
     fontSize: 12,
     color: '#6F6F6F',
+    fontFamily: 'Poppins-Regular',
   },
   dayNumber: {
     fontSize: 16,
     fontWeight: 'bold',
+    fontFamily: 'Poppins-SemiBold',
   },
   todayContainer: {
     backgroundColor: '#3471cc',
@@ -324,9 +330,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 38,
     fontWeight: '600',
-    borderBottomWidth: 2,
-    borderBottomColor: '#333',
     paddingBottom: 5,
+    fontFamily: 'Poppins-Regular',
   },
   eventContainer: {
     padding: 12,
@@ -347,12 +352,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     flex: 1,
-    color: '#fff'
+    color: '#fff',
+    fontFamily: 'Poppins-SemiBold',
   },
   eventTime: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#fff'
+    color: '#fff',
+    fontFamily: 'Poppins-SemiBold',
   },
   dayContainer: {
     alignItems: 'center',
@@ -364,15 +371,6 @@ const styles = StyleSheet.create({
   selectedDayContainer: {
     backgroundColor: '#3471cc',
     borderRadius: 20,
-  },
-  dayName: {
-    fontSize: 12,
-    color: '#6F6F6F',
-  },
-  dayNumber: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000',
   },
   selectedDayText: {
     color: '#fff',

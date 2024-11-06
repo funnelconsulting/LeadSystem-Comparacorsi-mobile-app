@@ -10,8 +10,10 @@ import network from "@/constants/Network";
 import RNPickerSelect from 'react-native-picker-select';
 import moment from 'moment';
 import Toast from 'react-native-toast-message'; // Importa Toast
+import { useLeads } from "@/context/LeadContext";
 
 const LeadDetails = () => {
+  const {updateLead} = useLeads()
   const [isModalVisible, setModalVisible] = useState(false);
   const [isModalVisible1, setModalVisible1] = useState(false);
   const [organize,setOrganize] =useState(false)
@@ -88,6 +90,30 @@ const LeadDetails = () => {
   ? moment(leadF.recallDate).format('DD/MM/YYYY') + ' ' + leadF.recallHours
   : '';
 
+  const formatDateString = (inputDate) => {
+    let parsedDate;
+  
+    // Prova a parsare con il formato DD-MM-YY HH:mm
+    if (moment(inputDate, 'DD-MM-YYYY HH:mm', true).isValid()) {
+      parsedDate = moment(inputDate, 'DD-MM-YYYY HH:mm');
+    } 
+    // Prova a parsare con il formato YY-MM-DD HH:mm
+    else if (moment(inputDate, 'YY-MM-DD HH:mm', true).isValid()) {
+      parsedDate = moment(inputDate, 'YY-MM-DD HH:mm');
+    } 
+    else {
+      // Prova a parsare senza validazione
+      parsedDate = moment(inputDate, ['DD-MM-YYYY HH:mm', 'YY-MM-DD HH:mm']);
+    }
+  
+    if (!parsedDate.isValid()) {
+      throw new Error('Formato data non valido');
+    }
+  
+    const formattedDate = parsedDate.format('DD/MM/YYYY HH:mm');
+    return formattedDate;
+  };
+
   const formattedCreationdate = leadF.data ? moment(leadF.data).format('DD/MM/YYYY HH:mm') : ''
 
   useEffect(() => {
@@ -157,11 +183,17 @@ const LeadDetails = () => {
       });
 
       console.log('Lead aggiornata:', response.data);
+      const leadAggiornata = {
+        ...leadF,
+        recallDate,
+        recallHours,
+      }
       setLeadF((prevLead) => ({
         ...prevLead,
         recallDate,
         recallHours,
       }));
+      updateLead(leadAggiornata)
       Toast.show({
         type: 'success',
         text1: 'Successo',
@@ -217,7 +249,7 @@ const LeadDetails = () => {
             tipologiaCorso,
           };
           const response = await axios.put(network.serverip+`/lead/${userFixId}/update/${item._id}`, modifyLead);
-          //await modificaLeadLocale(item._id, modifyLead); Non serve
+          updateLead(modifyLead);
           await fetchLeads()
           Toast.show({
             type: 'success',
@@ -261,7 +293,7 @@ const LeadDetails = () => {
           tipologiaCorso,
         };
         const response = await axios.put(network.serverip+`/lead/${userFixId}/update/${item._id}`, modifyLead);
-        //await modificaLeadLocale(item._id, modifyLead); Non serve
+        updateLead(modifyLead);
         await fetchLeads()
         Toast.show({
           type: 'success',
@@ -306,6 +338,12 @@ const LeadDetails = () => {
           text1Style: styles.toastText1, // Stile per il testo principale
           text2Style: styles.toastText2, // Stile per il testo secondario
         });
+        const leadAggiornata = {
+          ...leadF,
+          recallDate,
+          recallHours,
+        }
+        updateLead(leadAggiornata);
         setLeadF((prevLead) => ({
           ...prevLead,
           recallDate,
@@ -371,17 +409,17 @@ const LeadDetails = () => {
       <View style={styles.header}>
         {item.priorità === 3 ? 
           (<View style={styles.rating}>
-            <Image source={require("..//..//../assets/star.png")} style={styles.starIcon} />
-            <Image source={require("..//..//../assets/star.png")} style={styles.starIcon} />
-            <Image source={require("..//..//../assets/star.png")} style={styles.starIcon} />
+            <Image source={require("..//..//../assets/star1.png")} style={styles.starIcon} />
+            <Image source={require("..//..//../assets/star1.png")} style={styles.starIcon} />
+            <Image source={require("..//..//../assets/star1.png")} style={styles.starIcon} />
           </View>) : item.priorità === 2 ? (
           <View style={styles.rating}>
-            <Image source={require("..//..//../assets/star.png")} style={styles.starIcon} />
-            <Image source={require("..//..//../assets/star.png")} style={styles.starIcon} />
+            <Image source={require("..//..//../assets/star1.png")} style={styles.starIcon} />
+            <Image source={require("..//..//../assets/star1.png")} style={styles.starIcon} />
           </View>
                 ) : (
           <View style={styles.rating}>
-            <Image source={require("..//..//../assets/star.png")} style={styles.starIcon} />
+            <Image source={require("..//..//../assets/star1.png")} style={styles.starIcon} />
           </View>
                 )}
         <TouchableOpacity
@@ -408,7 +446,7 @@ const LeadDetails = () => {
               Data appuntamento: 
               {leadF && leadF?.appDate && leadF?.appDate?.trim() !== "" ?
               <Text style={[styles.detailText,{color:'green'}]}>
-                18/09/2024 14:25
+                {' '+ formatDateString(leadF?.appDate)}
               </Text> : 
               <Text style={[styles.detailText,{color:'green'}]}>
                 Nessun appuntamento
@@ -552,17 +590,18 @@ const LeadDetails = () => {
 
 const pickerSelectStyles = StyleSheet.create({
   inputIOS: {
-    fontSize: 16,
-    paddingVertical: 12,
+    fontSize: 14,
+    paddingVertical: 8,
     paddingHorizontal: 10,
     borderWidth: 1,
     borderColor: '#3471CC',
     borderRadius: 5,
     color: 'black',
     paddingRight: 30, // to ensure the text is never behind the icon
+    fontFamily: 'Poppins-Regular',
   },
   inputAndroid: {
-    fontSize: 16,
+    fontSize: 14,
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderWidth: 1,
@@ -570,6 +609,7 @@ const pickerSelectStyles = StyleSheet.create({
     borderRadius: 5,
     color: 'black',
     paddingRight: 30, // to ensure the text is never behind the icon
+    fontFamily: 'Poppins-Regular',
   },
 });
 
@@ -616,6 +656,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
     fontWeight: "bold",
+    fontFamily: 'Poppins-SemiBold',
   },
   info: {
     marginBottom: 20,
@@ -624,7 +665,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 10,
-    color:'#3471CC'
+    color:'#3471CC',
+    fontFamily: 'Poppins-SemiBold',
   },
   details: {
     marginBottom: 10,
@@ -641,7 +683,8 @@ const styles = StyleSheet.create({
   },
   detailText: {
     marginLeft: 10,
-    color:'#000'
+    color:'#000',
+    fontFamily: 'Poppins-Regular',
   },
   recall: {
     marginVertical:10,
@@ -664,6 +707,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     marginRight: 10,
     color:'#3471CC',
+    fontFamily: 'Poppins-Regular',
   },
   closeIcon: {
     width: 15,
@@ -673,7 +717,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
-    color:'#000'
+    color:'#000',
+    fontFamily: 'Poppins-SemiBold',
   },
   inputGroup: {
     marginBottom: 15,
@@ -681,11 +726,13 @@ const styles = StyleSheet.create({
   label2: {
     fontSize: 16,
     fontWeight: 'bold',
-    color:'#000'
+    color:'#000',
+    fontFamily: 'Poppins-SemiBold',
   },
   label: {
-    fontSize: 16,
-    color:'#000'
+    fontSize: 14,
+    color:'#000',
+    fontFamily: 'Poppins-Regular',
   },
   input: {
     borderWidth: 1,
@@ -693,6 +740,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     marginTop: 5,
+    fontFamily: 'Poppins-Regular',
   },
   header2: {
     flexDirection: 'row',
@@ -702,7 +750,8 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color:'#000'
+    color:'#000',
+    fontFamily: 'Poppins-SemiBold',
   },
   opportunityContainer: {
     backgroundColor: '#FFF5E1',
@@ -715,6 +764,7 @@ const styles = StyleSheet.create({
     color: '#FFA500',
     fontSize: 14,
     fontWeight: 'bold',
+    fontFamily: 'Poppins-SemiBold',
   },
   row: {
     flexDirection: 'row',
@@ -741,6 +791,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+    fontFamily: 'Poppins-SemiBold',
   },
   toast: {
     backgroundColor: '#333', // Colore di sfondo del toast
@@ -751,10 +802,12 @@ const styles = StyleSheet.create({
     fontSize: 16, // Dimensione del testo principale
     fontWeight: 'bold', // Grassetto
     color: '#000', // Colore del testo principale
+    fontFamily: 'Poppins-SemiBold',
   },
   toastText2: {
     fontSize: 14, // Dimensione del testo secondario
     color: '#000', // Colore del testo secondario
+    fontFamily: 'Poppins-Regular',
   },
 });
 

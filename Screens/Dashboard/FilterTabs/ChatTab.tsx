@@ -149,6 +149,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
     marginRight:60,
+    fontFamily: 'Poppins-SemiBold',
   },
   chatContainer: {
     flex: 1,
@@ -171,14 +172,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
   },
   messageText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#000',
+    fontFamily: 'Poppins-Regular',
   },
   timeText: {
     fontSize: 12,
     color: '#000',
     textAlign: 'right',
     marginTop: 5,
+    fontFamily: 'Poppins-SemiBold',
   },
   footer: {
     padding: 5,

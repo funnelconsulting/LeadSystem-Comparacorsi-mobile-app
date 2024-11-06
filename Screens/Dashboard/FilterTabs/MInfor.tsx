@@ -24,6 +24,7 @@ const MInfor = () => {
   const [lavori, setLavori] = useState('');
   const [tempoDisponibile, setTempoDisponibile] = useState('');
   const [categorie, setCategorie] = useState('');
+  const [lead, setLead] = useState()
 
   useEffect(() => {
     const fetchLead = async () => {
@@ -44,6 +45,7 @@ const MInfor = () => {
         setLavori(response.data.lavoro ? 'Si' : 'No');
         setTempoDisponibile(response.data.oreStudio || '');
         setCategorie(response.data.categories || '');
+        setLead(response.data)
       } catch (err) {
         console.error('Errore nel recupero del lead:', err);
       }
@@ -89,7 +91,36 @@ const MInfor = () => {
         editable={false}
       />
 
-      <Text style={styles.title}>Corso di laurea</Text>
+      <Text style={styles.title}>Budget</Text>
+      <TextInput
+        style={styles.input}
+        value={lead?.budget}
+        //onChangeText={setAreaStudi}
+        placeholder="Budget"
+        editable={false}
+      />
+
+      {lead?.città && lead?.città?.trim() !== "" ? (<>
+      <Text style={styles.title}>Provincia</Text>
+      <TextInput
+        style={styles.input}
+        value={lead?.città}
+        //onChangeText={setAreaStudi}
+        placeholder="Città"
+        editable={false}
+      />
+      <Text style={styles.title}>Necessità</Text>
+      <TextInput
+        style={styles.input}
+        value={lead?.necessità}
+        //onChangeText={setAreaStudi}
+        placeholder="Necessità"
+        editable={false}
+      />
+      </>)  : null}
+
+      {lead?.città && lead?.città?.trim() !== "" ? null :
+      <><Text style={styles.title}>Corso di laurea</Text>
       <TextInput
         style={styles.input}
         value={corsoDiLaure}
@@ -132,7 +163,7 @@ const MInfor = () => {
         onChangeText={setTempoDisponibile}
         placeholder="Inserisci il tempo disponibile"
         editable={false}
-      />
+      /></>}
 
       <Text style={styles.title}>Categorie</Text>
       <TextInput
@@ -160,9 +191,10 @@ const styles = StyleSheet.create({
     paddingBottom: 80, // Adjust this value to create more space at the bottom
   },
   title: {
-    fontSize: 16,
+    fontSize: 14,
     marginBottom: 10,
-    color:'#000'
+    color:'#000',
+    fontFamily: 'Poppins-Regular',
   },
   input: {
     borderWidth: 1,
@@ -170,6 +202,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 20,
     borderRadius: 5,
+    fontFamily: 'Poppins-Regular',
   },
   button: {
     backgroundColor: '#3471cc',
@@ -181,6 +214,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+    fontFamily: 'Poppins-SemiBold',
   },
 });
 

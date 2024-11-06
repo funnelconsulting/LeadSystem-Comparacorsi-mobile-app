@@ -254,6 +254,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
     marginRight:50,
+    fontFamily: 'Poppins-SemiBold',
   },
   messageContainer: {
     marginBottom: 10,
@@ -272,12 +273,14 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 16,
     color: '#000',
+    fontFamily: 'Poppins-Regular',
   },
   timeText: {
     fontSize: 12,
     color: '#000',
     textAlign: 'right',
     marginTop: 5,
+    fontFamily: 'Poppins-SemiBold',
   },
   footer: {
     padding: 5,
@@ -292,6 +295,7 @@ const styles = StyleSheet.create({
   footerText: {
     color: '#fff',
     fontSize: 12,
+    fontFamily: 'Poppins-Regular',
   },
   arrowContainer: {
     justifyContent: 'center',

@@ -11,6 +11,7 @@ import {
   ActivityIndicator
 } from "react-native";
 import { useNavigation } from '@react-navigation/native';
+import moment from "moment";
 
 const LeadsColumns = ({loadOtherLeads, loadindInside, setLoadOtherLeads, leads, isZoomedOut, orientatoriOptions, setLeads, onUpdateLead, modificaLead, fetchLeads, handleLoadOtherLeads}) => {
   const navigation = useNavigation();
@@ -139,15 +140,15 @@ const LeadsColumns = ({loadOtherLeads, loadindInside, setLoadOtherLeads, leads, 
                   ]}
                 >
                   <Image
-                    source={require("..//..//../assets/star.png")}
+                    source={require("..//..//../assets/star1.png")}
                     style={[styles.icon, isZoomedOut && styles.iconZoomedOut]}
                   />
                   <Image
-                    source={require("..//..//../assets/star.png")}
+                    source={require("..//..//../assets/star1.png")}
                     style={[styles.icon, isZoomedOut && styles.iconZoomedOut]}
                   />
                   <Image
-                    source={require("..//..//../assets/star.png")}
+                    source={require("..//..//../assets/star1.png")}
                     style={[styles.icon, isZoomedOut && styles.iconZoomedOut]}
                   />
                 </View>) : item.priorità === 2 ? (
@@ -158,11 +159,11 @@ const LeadsColumns = ({loadOtherLeads, loadindInside, setLoadOtherLeads, leads, 
                   ]}
                 >
                   <Image
-                    source={require("..//..//../assets/star.png")}
+                    source={require("..//..//../assets/star1.png")}
                     style={[styles.icon, isZoomedOut && styles.iconZoomedOut]}
                   />
                   <Image
-                    source={require("..//..//../assets/star.png")}
+                    source={require("..//..//../assets/star1.png")}
                     style={[styles.icon, isZoomedOut && styles.iconZoomedOut]}
                   />
                 </View>
@@ -174,7 +175,7 @@ const LeadsColumns = ({loadOtherLeads, loadindInside, setLoadOtherLeads, leads, 
                   ]}
                 >
                   <Image
-                    source={require("..//..//../assets/star.png")}
+                    source={require("..//..//../assets/star1.png")}
                     style={[styles.icon, isZoomedOut && styles.iconZoomedOut]}
                   />
                 </View>
@@ -185,10 +186,56 @@ const LeadsColumns = ({loadOtherLeads, loadindInside, setLoadOtherLeads, leads, 
                 />}
               </View>
             </View>
-            <Image
-              source={require("..//..//../assets/dots.png")}
-              style={[styles.icon, isZoomedOut && styles.iconZoomedOut]}
-            />
+            {item.recallDate && item.recallDate !== null ? (
+              (() => {
+                const today = moment().startOf('day');
+                const recallDate = moment(item.recallDate).startOf('day');
+                const diffDays = recallDate.diff(today, 'days');
+
+                if (diffDays < 0) {
+                  return (
+                    <View style={[
+                      styles.recallContainer,
+                      { borderColor: '#C41247' },
+                      isZoomedOut && styles.recallContainerZoomedOut
+                    ]}>
+                    <Image
+                      source={require("..//..//../assets/recRed.png")}
+                      style={[styles.recallIcon, isZoomedOut && styles.recallIconZoomedOut]}
+                    />
+                    </View>
+                  );
+                } else if (diffDays === 0) {
+                  return (
+                    <View style={[
+                      styles.recallContainer,
+                      { borderColor: '#FFC800' },
+                      isZoomedOut && styles.recallContainerZoomedOut
+                    ]}>
+                    <Image
+                      source={require("..//..//../assets/recYellow.png")}
+                      style={[styles.recallIcon, isZoomedOut && styles.recallIconZoomedOut]}
+                    />
+                    </View>
+                  );
+                } else {
+                  return (
+                    <View style={[
+                      styles.recallContainer,
+                      { borderColor: '#30978B' },
+                      isZoomedOut && styles.recallContainerZoomedOut
+                    ]}>
+                    <Image
+                      source={require("..//..//../assets/recGreen.png")}
+                      style={[styles.recallIcon, isZoomedOut && styles.recallIconZoomedOut]}
+                    />
+                    </View>
+                  );
+                }
+              })()
+            ) : (
+              null
+            )}
           </View>
         </TouchableOpacity>
       ))}
@@ -292,7 +339,9 @@ const styles = StyleSheet.create({
       contactInfo: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: 'space-around'
+        justifyContent: 'flex-start',
+        gap: 6,
+        position: 'relative'
       },
       topColumn: {
         flexDirection: 'row',
@@ -310,6 +359,7 @@ const styles = StyleSheet.create({
         color: '#000',
         fontWeight: '600',
         transition: "all 0.3s ease-in-out",
+        fontFamily: 'Poppins-SemiBold'
       },
       columnTitleZoomedOut: {
         fontSize: 12.2, // Ridotto a 0.7
@@ -334,6 +384,7 @@ const styles = StyleSheet.create({
         color: '#000',
         fontWeight: '600',
         transition: "all 0.3s ease-in-out",
+        fontFamily: 'Poppins-SemiBold',
       },
       numberTitleZoomedOut: {
         fontSize: 7.1, // Ridotto a 0.7
@@ -359,6 +410,7 @@ const styles = StyleSheet.create({
         color: "#1f2937",
         fontWeight: "bold",
         transition: "all 0.3s ease-in-out",
+        fontFamily: 'Poppins-SemiBold',
       },
       avatarTextZoomedOut: {
         fontSize: 9.2, // Ridotto a 0.7
@@ -368,10 +420,11 @@ const styles = StyleSheet.create({
         justifyContent: "center",
       },
       contactName: {
-        fontSize: 14,
+        fontSize: 13,
         color: "#1f2937",
         fontWeight: "500",
         transition: "all 0.3s ease-in-out",
+        fontFamily: 'Poppins-Regular',
       },
       contactNameZoomedOut: {
         fontSize: 7.8, // Ridotto a 0.7
@@ -398,6 +451,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: "#fff",
         transition: "all 0.3s ease-in-out",
+        fontFamily: 'Poppins-Regular',
       },
       infoTextZoomedOut: {
         fontSize: 6.4, // Ridotto a 0.7
@@ -406,6 +460,44 @@ const styles = StyleSheet.create({
         width: 14,
         height: 14,
         marginLeft: 5,
+        transition: "all 0.3s ease-in-out",
+      },
+      recallContainer: {
+        width: 38,
+        height: 38,
+        borderRadius: 20,
+        borderWidth: 1,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+        position: 'absolute',
+        right: 5,
+        top: 0,
+      },
+      recallContainerZoomedOut: {
+        width: 25,
+        height: 25,
+        borderRadius: 20,
+        borderWidth: 1,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+        position: 'absolute',
+        right: 5,
+        top: 0,
+      },
+      recallIcon: {
+        width: 28,
+        height: 28,
+        marginLeft: 0,
+        transition: "all 0.3s ease-in-out",
+      },
+      recallIconZoomedOut: {
+        width: 14,
+        height: 14,
+        marginLeft: 0,
         transition: "all 0.3s ease-in-out",
       },
       refreshIcon: {

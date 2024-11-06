@@ -2,7 +2,7 @@
   "expo": {
     "name": "LeadSystem",
     "slug": "LeadSystem",
-    "version": "1.0.8",
+    "version": "1.1.4",
     "orientation": "portrait",
     "icon": "./assets/applogo.png",
     "scheme": "myapp",
@@ -21,7 +21,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.leadsystem",
-      "buildNumber": "9",
+      "buildNumber": "18",
       "infoPlist": {
         "UIBackgroundModes": ["remote-notification"]
       },
@@ -38,7 +38,7 @@
       "googleServicesFile": "./google-services.json",
       "useNextNotificationsApi": true,
       "package": "com.leadsystem",
-      "versionCode": 8,
+      "versionCode": 16,
       "permissions": ["NOTIFICATIONS", "VIBRATE"]
     },
     "web": {
@@ -51,9 +51,10 @@
         "projectId": "c893217e-1758-46d2-b886-0bb87fa90020"
       }
     },
-    "runtimeVersion": "1.0.4",
+    "runtimeVersion": "1.1.4",
     "updates": {
-      "url": "https://u.expo.dev/c893217e-1758-46d2-b886-0bb87fa90020"
+      "url": "https://u.expo.dev/c893217e-1758-46d2-b886-0bb87fa90020",
+      "fallbackToCacheTimeout": 600
     },
     "plugins": [
       [

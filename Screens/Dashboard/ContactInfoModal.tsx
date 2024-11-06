@@ -7,37 +7,35 @@ import RNPickerSelect from 'react-native-picker-select';
 
 const ContactInfoModal = ({ isVisible, onClose, orientatoriOptions, applyFilters, resetFilters, recall, setRecall, orientatore, setOrientatore, selectedPriority, setSelectedPriority, startDate, setStartDate, endDate, setEndDate}) => {
   const navigation = useNavigation();
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [isSelectingStartDate, setIsSelectingStartDate] = useState(true);
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
 
   const handlePrioritySelect = (priority) => {
-    setSelectedPriority(priority);
+    setSelectedPriority(prevPriorities => {
+      if (prevPriorities.includes(priority)) {
+        return prevPriorities.filter(p => p !== priority);
+      } else {
+        return [...prevPriorities, priority];
+      }
+    });
   };
 
-  const onDateChange = (event, selectedDate) => {
+  const onStartDateChange = (event, selectedDate) => {
+    setShowStartDatePicker(false);
     if (selectedDate) {
-      let currentDate = new Date(selectedDate);
-      
-      if (isSelectingStartDate) {
-        currentDate.setHours(0, 1, 0, 0); // Imposta l'orario a 00:01
-        setIsSelectingStartDate(false);
-        setStartDate(currentDate);
-        setShowDatePicker(true);
-      } else {
-        currentDate.setHours(23, 59, 0, 0); // Imposta l'orario a 23:59
-        setEndDate(currentDate);
-        setShowDatePicker(false);
-      }
-    } else {
-      setShowDatePicker(false);
+      const currentDate = new Date(selectedDate);
+      currentDate.setHours(0, 0, 0, 0);
+      setStartDate(currentDate);
     }
   };
 
-  const openDatePicker = () => {
-    setStartDate(new Date())
-    setEndDate(new Date())
-    setIsSelectingStartDate(true); // Start with selecting the start date
-    setShowDatePicker(true); // Open date picker initially
+  const onEndDateChange = (event, selectedDate) => {
+    setShowEndDatePicker(false);
+    if (selectedDate) {
+      const currentDate = new Date(selectedDate);
+      currentDate.setHours(23, 59, 59, 999);
+      setEndDate(currentDate);
+    }
   };
 
   const handleSaveFilters = () => {
@@ -45,7 +43,7 @@ const ContactInfoModal = ({ isVisible, onClose, orientatoriOptions, applyFilters
       startDate,
       endDate,
       orientatore,
-      priority: selectedPriority,
+      priorities: selectedPriority, // Usa l'array di priorità selezionate
       recall: recall
     };
     applyFilters(filters);
@@ -56,7 +54,7 @@ const ContactInfoModal = ({ isVisible, onClose, orientatoriOptions, applyFilters
     setStartDate(null);
     setEndDate(null);
     setOrientatore(null);
-    setSelectedPriority(null);
+    setSelectedPriority([]);
     setRecall(false);
     resetFilters();
     onClose();
@@ -78,24 +76,36 @@ const ContactInfoModal = ({ isVisible, onClose, orientatoriOptions, applyFilters
           <View style={styles.modalContent}>
             {/* Data Picker */}
             <Text style={styles.label}>Data</Text>
-            <TouchableOpacity onPress={openDatePicker}>
-              <View style={styles.dateInputContainer}>
-                <Text style={styles.dateInput}>
-                  {startDate ? startDate.toLocaleDateString() : 'Select start date'} - {endDate ? endDate.toLocaleDateString() : 'Select end date'}
-                </Text>
-                <Image source={require('../../assets/calendar.png')} style={styles.dateIcon} />
+              <View style={styles.dateContainer}>
+                <TouchableOpacity onPress={() => setShowStartDatePicker(true)} style={styles.dateButton}>
+                  <Text style={styles.dateButtonText}>
+                    {startDate ? startDate.toLocaleDateString() : 'Data inizio'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowEndDatePicker(true)} style={styles.dateButton}>
+                  <Text style={styles.dateButtonText}>
+                    {endDate ? endDate.toLocaleDateString() : 'Data fine'}
+                  </Text>
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
-            {showDatePicker && (
-              <View style={styles.pickerContainer}>
+              
+              {showStartDatePicker && (
                 <DateTimePicker
-                  value={isSelectingStartDate ? startDate : endDate}
+                  value={startDate || new Date()}
                   mode="date"
                   display="default"
-                  onChange={onDateChange}
+                  onChange={onStartDateChange}
                 />
-              </View>
-            )}
+              )}
+              
+              {showEndDatePicker && (
+                <DateTimePicker
+                  value={endDate || new Date()}
+                  mode="date"
+                  display="default"
+                  onChange={onEndDateChange}
+                />
+              )}
 
             {/* Orientatore Dropdown */}
             <Text style={styles.label}>Orientatore</Text>
@@ -115,38 +125,20 @@ const ContactInfoModal = ({ isVisible, onClose, orientatoriOptions, applyFilters
             {/* Priority Section */}
             <Text style={[styles.label, { alignSelf: 'center' }]}>Priorità</Text>
             <View style={styles.priorityContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.priorityButton,
-                  selectedPriority === 3 && styles.selectedPriorityButton,
-                ]}
-                onPress={() => handlePrioritySelect(3)}
-              >
-                <Image source={require('../../assets/star.png')} style={styles.priorityImage} />
-                <Image source={require('../../assets/star.png')} style={styles.priorityImage} />
-                <Image source={require('../../assets/star.png')} style={styles.priorityImage} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.priorityButton,
-                  selectedPriority === 2 && styles.selectedPriorityButton,
-                ]}
-                onPress={() => handlePrioritySelect(2)}
-              >
-                <Image source={require('../../assets/star.png')} style={styles.priorityImage} />
-                <Image source={require('../../assets/star.png')} style={styles.priorityImage} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.priorityButton,
-                  selectedPriority === 1 && styles.selectedPriorityButton,
-                ]}
-                onPress={() => handlePrioritySelect(1)}
-              >
-                <Image source={require('../../assets/star.png')} style={styles.priorityImage} />
-              </TouchableOpacity>
+              {[3, 2, 1].map(priority => (
+                <TouchableOpacity
+                  key={priority}
+                  style={[
+                    styles.priorityButton,
+                    selectedPriority.includes(priority) && styles.selectedPriorityButton,
+                  ]}
+                  onPress={() => handlePrioritySelect(priority)}
+                >
+                  {[...Array(priority)].map((_, index) => (
+                    <Image key={index} source={require('../../assets/star1.png')} style={styles.priorityImage} />
+                  ))}
+                </TouchableOpacity>
+              ))}
             </View>
 
             {/* Recall Switch */}
@@ -182,6 +174,7 @@ const pickerSelectStyles = StyleSheet.create({
     paddingHorizontal: 15,
     backgroundColor: '#fff',
     color: '#000',
+    fontFamily: 'Poppins-Regular',
   },
   inputAndroid: {
     borderWidth: 1,
@@ -191,6 +184,7 @@ const pickerSelectStyles = StyleSheet.create({
     paddingHorizontal: 15,
     backgroundColor: '#fff',
     color: '#000',
+    fontFamily: 'Poppins-Regular',
   },
 });
 
@@ -222,8 +216,7 @@ const styles = StyleSheet.create({
     top: 20,
     left: 20,
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#000',
+    fontFamily: 'Poppins-SemiBold',
   },
   modalContent: {
     width: '100%',
@@ -236,6 +229,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 10,
     alignSelf: 'flex-start',
+    fontFamily: 'Poppins-Regular',
   },
   dateInputContainer: {
     flexDirection: 'row',
@@ -247,11 +241,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingLeft: 15,
     backgroundColor: '#f9f9f9',
+    fontFamily: 'Poppins-Regular',
+  },
+  pickerContainer: {
+    marginBottom: 20,
   },
   dateInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 14,
     color: '#333',
+    fontFamily: 'Poppins-Regular',
   },
   dateIcon: {
     width: 20,
@@ -299,6 +298,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: 'Poppins-SemiBold',
   },
   cancelButton: {
     borderColor: '#007BFF',
@@ -311,6 +311,27 @@ const styles = StyleSheet.create({
     color: '#007BFF',
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: 'Poppins-SemiBold',
+  },
+
+  dateContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  dateButton: {
+    flex: 1,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    padding: 10,
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  dateButtonText: {
+    fontSize: 14,
+    color: '#333',
+    fontFamily: 'Poppins-Regular',
   },
 });
 

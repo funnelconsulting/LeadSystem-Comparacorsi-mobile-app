@@ -59,9 +59,15 @@ const Whatsapp = ({navigation}) => {
 
       const data = await response.json();
       const { chats } = data;
-      console.log(data);
-      setLeadsChat(chats);
-      setFilteredChat(chats);
+
+      const sortedChats = chats.sort((a, b) => {
+        const lastMessageA = a.messages[a.messages.length - 1];
+        const lastMessageB = b.messages[b.messages.length - 1];
+        return new Date(lastMessageB.timestamp) - new Date(lastMessageA.timestamp);
+      });
+
+      setLeadsChat(sortedChats);
+      setFilteredChat(sortedChats);
       setIsLoading(false);
     } catch (error) {
       console.error(error);
@@ -94,21 +100,24 @@ const Whatsapp = ({navigation}) => {
             <Image source={require('../assets/Vector.png')} style={styles.topIcon} />
           </TouchableOpacity>
       </View>
-      <View style={styles.bodyContainer}> 
-      <View style={styles.searchContainer}>
-        <Image source={require('../assets/search.png')} style={styles.searchIcon} />
-        <TextInput
-          placeholder="Search..."
-          placeholderTextColor="#999"
-          value={searchTerm}
-          onChangeText={setSearchTerm}
-          style={styles.searchInput}
-        />
-        {/*<Image source={require('../assets/filter.png')} style={styles.filterIcon} />*/}
-      </View>
+      <View style={styles.bodyContainer}>
+        <View style={styles.bigSearchContainer}>
+          <View style={styles.searchContainer}>
+            <Image source={require('../assets/search.png')} style={styles.searchIcon} />
+            <TextInput
+              placeholder="Search..."
+              placeholderTextColor="#999"
+              value={searchTerm}
+              onChangeText={setSearchTerm}
+              style={styles.searchInput}
+            />
+            {/*<Image source={require('../assets/filter.png')} style={styles.filterIcon} />*/}
+          </View>          
+        </View>
       {leadsChat.length > 0 || filteredChat.length > 0 ? (
           <FlatList
             data={filteredChat}
+            contentContainerStyle={{ paddingBottom: 110 }}
             keyExtractor={(item) => item._id.toString()}
             renderItem={({ item }) => {
               if (!item || !item.messages || item.messages.length === 0) {
@@ -171,6 +180,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: '#3471CC',
+    fontFamily: 'Poppins-Regular',
   },
   noChatsContainer: {
     flex: 1,
@@ -180,6 +190,10 @@ const styles = StyleSheet.create({
   noChatsText: {
     fontSize: 16,
     color: '#6F6F6F',
+    fontFamily: 'Poppins-Regular',
+  },
+  bigSearchContainer: {
+    paddingHorizontal: 20,
   },
   topWhats: {
     paddingTop: Platform.OS === 'ios' ? 38 : 10,
@@ -199,6 +213,7 @@ const styles = StyleSheet.create({
   },
   bodyContainer: {
     paddingHorizontal: 6,
+    paddingBottom: 60,
   },
   topIcon: {
     width: 23,
@@ -209,6 +224,7 @@ const styles = StyleSheet.create({
   indietroText: {
     fontWeight: '600',
     fontSize: 16,
+    fontFamily: 'Poppins-Regular',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -241,6 +257,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderRadius: 20,
     color: '#000',
+    fontFamily: 'Poppins-Regular',
   },
   messageContainer: {
     flexDirection: 'row',
@@ -275,19 +292,22 @@ const styles = StyleSheet.create({
   },
   name: {
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 15,
     color: '#000',
+    fontFamily: 'Poppins-SemiBold',
   },
   message: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#555',
-    fontWeight: '600'
+    fontWeight: '600',
+    fontFamily: 'Poppins-Regular',
   },
   time: {
     fontSize: 12,
     color: '#3471CC',
     marginRight: 10,
-    fontWeight: '600'
+    fontWeight: '600',
+    fontFamily: 'Poppins-SemiBold',
   },
 });
 
