@@ -17,6 +17,7 @@ import BackImage from './/assets//back.png';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import network from './constants/Network';
+import { Link } from 'expo-router';
 
 const Stack = createStackNavigator();
 
@@ -65,6 +66,12 @@ export default function App({navigation}) {
       Notifications.removeNotificationSubscription(responseListener.current);
     };
   }, []);
+
+  return <View style={{flex: 1, justifyContent: "center", alignItems: 'center', gap: 16}}>
+          <Text style={{fontWeight: 800, fontSize: 26}}>App disattivata!</Text>
+          <Text style={{textAlign: "center"}}>Abbiamo temporaneamente disattivato l'app del LeadSystem, puoi accedere al servizio al seguente URL</Text>
+          <Text><Link style={{color: "#1d47ffff", textDecorationLine: "underline", textDecorationColor :"#1d47ffff"}} href={"https://leadsystem.comparacorsi.it/"}>https://leadsystem.comparacorsi.it/</Link></Text>
+        </View>
 
   return (
     <NavigationContainer>
