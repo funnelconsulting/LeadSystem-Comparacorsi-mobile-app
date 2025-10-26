@@ -53,7 +53,7 @@ const FilterDataTabs = () => {
           fetchLeads, 
           setColumnData 
         }} />
-        <Tab.Screen name='Info' component={MInfor} initialParams={{ item, orientatoriOptions, onUpdateLead }} />
+        {lead && lead.campagna !== "AI chatbot" && <Tab.Screen name='Info' component={MInfor} initialParams={{ item, orientatoriOptions, onUpdateLead }} />}
         {chat && chat.messages && chat.messages.length > 0 && <Tab.Screen name='Chat' component={Chat} initialParams={{ item, orientatoriOptions, lead, chat }} />}
       </Tab.Navigator>
   )
